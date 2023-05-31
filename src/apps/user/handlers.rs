@@ -1,6 +1,6 @@
 use askama::Template;
 use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse};
+use axum::response::{Html, IntoResponse, Redirect};
 use axum::Json;
 use serde::Deserialize;
 use tower_cookies::{Cookie, Cookies};
@@ -25,6 +25,7 @@ pub async fn post_log_in(cookies: Cookies, payload: Json<LogInBody>) -> impl Int
     // TODO: generate UID for session
     let session_uid = String::from("");
     cookies.add(Cookie::new(COOKIE_NAME, session_uid));
+    // Redirect
 }
 
 pub async fn get_log_in() -> impl IntoResponse {

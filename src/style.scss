@@ -1,4 +1,4 @@
-/* begin css reset */
+/* BEGIN CSS RESET */
 *,
 *:before,
 *:after {
@@ -105,4 +105,55 @@ table {
 input {
   -webkit-appearance: none;
   border-radius: 0;
+}
+
+/* END RESET */
+
+html,
+body,
+.full-size {
+  width: 100%;
+  height: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-2 {
+  flex: 2;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.padding-025 {
+  padding: 0.2em;
+}
+
+.padding-05 {
+  padding: 0.5em;
 }
