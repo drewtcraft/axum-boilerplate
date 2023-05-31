@@ -4,6 +4,7 @@ use std::net::SocketAddr;
 mod apps;
 mod error;
 mod router;
+mod templates;
 
 #[tokio::main]
 async fn main() {
