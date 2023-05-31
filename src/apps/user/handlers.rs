@@ -5,8 +5,6 @@ use axum::Json;
 use serde::Deserialize;
 use tower_cookies::{Cookie, Cookies};
 
-use crate::templates::BaseTemplate;
-
 use super::templates::LogInTemplate;
 
 const COOKIE_NAME: &'static str = ""; // TODO name this
