@@ -2,6 +2,7 @@
 name = "axum-media-notes"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -24,3 +25,6 @@ askama = "0.12.0"
 [dev-dependencies]
 anyhow = "1"
 httpc-test = "0.1.1"
+
+[build-dependencies]
+walkdir = "2.3.2"
