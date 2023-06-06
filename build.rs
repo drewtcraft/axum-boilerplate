@@ -5,7 +5,7 @@ use std::process::Command;
 use walkdir::WalkDir;
 
 fn main() {
-    let mut output_file = File::create("src/concat.scss").expect("failed to create output file");
+    let mut output_file = File::create("concat.scss").expect("failed to create output file");
 
     // Walk through src directory and search for SCSS files
     for entry in WalkDir::new("src") {
@@ -27,11 +27,11 @@ fn main() {
 
     // Execute the sass command
     let output = Command::new("sass")
-        .args(&["src/concat.scss", "public/css/style.css"])
+        .args(&["concat.scss", "public/css/style.css"])
         .output()
         .expect("failed to execute sass");
 
-    fs::remove_file("src/concat.scss").expect("failed to remove concat.scss");
+    fs::remove_file("concat.scss").expect("failed to remove concat.scss");
 
     // Print sass's stdout and stderr
     println!("{}", String::from_utf8_lossy(&output.stdout));
