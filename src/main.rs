@@ -1,10 +1,11 @@
 use axum;
 use dotenv::dotenv;
-use sqlx::{migrate::MigrateDatabase, FromRow, Sqlite, SqlitePool};
+use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, FromRow, Row, Sqlite, SqlitePool};
 use std::env;
 use std::net::SocketAddr;
 
 mod apps;
+mod database;
 mod error;
 mod router;
 mod templates;
@@ -21,29 +22,58 @@ struct User {
 async fn main() {
     dotenv().expect("secrets file could not be loaded");
 
-    let database_url = env::var("DATABASE_URL").unwrap();
-    if !Sqlite::database_exists(&database_url)
-        .await
-        .unwrap_or(false)
-    {
-        Sqlite::create_database(&database_url)
-            .await
-            .expect("database could not be created and does not exist");
+    let db_pool = database::initialize_database().await;
+
+    println!("loaded secrets");
+
+    let result = sqlx::query(
+        "SELECT name
+         FROM sqlite_schema
+         WHERE type ='table' 
+         AND name NOT LIKE 'sqlite_%';",
+    )
+    .fetch_all(&db_pool)
+    .await
+    .unwrap();
+
+    for (idx, row) in result.iter().enumerate() {
+        println!("[{}]: {:?}", idx, row.get::<String, &str>("name"));
     }
-    println!("database url {}", &database_url);
 
-    let db = SqlitePool::connect(&database_url)
-        .await
-        .expect("could not connect to database");
+    let result = sqlx::query(
+        "
+        INSERT INTO users (
+            username,
+            email,
+            active,
+            created_at,
+            updated_at
+        ) VALUES (
+            ?, 
+            ?, 
+            ?, 
+            ?, 
+            ?
+        );",
+    )
+    .bind("bobby")
+    .execute(&db_pool)
+    .await
+    .unwrap();
 
-    println!("looks like we got a db connection");
+    println!("Query result: {:?}", result);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let port = env::var("PORT")
+        .unwrap_or(String::from("8080"))
+        .parse::<u16>()
+        .unwrap();
 
-    println!("listening on {addr}");
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+
+    println!("starting server on {addr}");
 
     axum::Server::bind(&addr)
         .serve(router::get_routes().into_make_service())
         .await
-        .unwrap();
+        .expect("could not start axum server");
 }
