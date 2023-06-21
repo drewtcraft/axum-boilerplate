@@ -6,4 +6,10 @@ pub struct LogInTemplate();
 
 #[derive(Template)]
 #[template(path = "sign-up.html")]
-pub struct SignUpTemplate();
+pub struct SignUpTemplate {
+    pub email: String,
+}
+
+#[derive(Template)]
+#[template(path = "send-invite.html")]
+pub struct SendInviteTemplate();

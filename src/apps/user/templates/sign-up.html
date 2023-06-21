@@ -1,24 +1,18 @@
-{% extends "base.html" %}
-
-{% block title %}log in{% endblock title %}
-
-{% block body %}
 <div class="full-size flex flex-column justify-center padding-05">
   <h1 class="text-center">Sign Up</h1>
-  <form class="flex flex-column justify-center" action="POST" action="/user/sign-up">
+  <form class="flex flex-column justify-center" hx-post hx-target="#page_content">
+    <div class="input-group">
+      <label for="email">
+        email
+      </label>
+      <input type="email" name="email" id="sign-up-email" required value="{{ email }}" disabled />
+    </div>
     <div class="input-group">
       <label for="username">
         username
       </label>
       <input type="text" name="username" id="sign-up-username" required />
     </div>
-    <div class="input-group">
-      <label for="email">
-        email
-      </label>
-      <input type="email" name="email" id="sign-up-email" required />
-    </div>
     <input type="submit" value="sign up" />
   </form>
 </div>
-{% endblock body %}
