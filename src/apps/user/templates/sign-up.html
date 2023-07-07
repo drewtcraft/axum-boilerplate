@@ -1,18 +1,28 @@
 <div class="full-size flex flex-column justify-center padding-05">
+
   <h1 class="text-center">Sign Up</h1>
+
   <form class="flex flex-column justify-center" hx-post hx-target="#page_content">
+
     <div class="input-group">
       <label for="email">
         email
       </label>
-      <input type="email" name="email" id="sign-up-email" required value="{{ email }}" disabled />
+      <input type="email" name="email" id="sign-up-email" value="{{ attached_email }}" disabled />
     </div>
+
     <div class="input-group">
       <label for="username">
         username
       </label>
-      <input type="text" name="username" id="sign-up-username" required />
+      {% if let Some(username_input_error) = username_input_error %}
+      <div class="error">{{ username_input_error }}</div>
+      {% endif %}
+
+      <input type="text" name="username" id="sign-up-username" value="{{ username.unwrap_or("") }}" required />
     </div>
+
     <input type="submit" value="sign up" />
+
   </form>
 </div>

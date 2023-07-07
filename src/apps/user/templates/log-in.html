@@ -1,13 +1,26 @@
 <div class="full-size flex flex-column justify-center padding-05">
+
   <h1 class="text-center">Log In</h1>
+
   <p>Enter your username and we'll send you an email with a MaGiC lOgIn link</p>
-  <form class="flex flex-column justify-center" action="POST" action="/user/log-in">
+
+  <form class="flex flex-column justify-center" action="POST" action="/log-in" hx-post="/log-in"
+    hx-target="#page_content">
+
     <div class="input-group">
-      <label for="username">
-        username
+      <label for="username_or_email">
+        username or email
       </label>
-      <input type="text" name="username" id="log-in-username" required />
+      {% if let Some(input_error) = input_error %}
+      <div class="error">{{ input_error }}</div>
+      {% endif %}
+      <input type="text" name="username_or_email" id="log-in-username" required />
     </div>
+
     <input type="submit" value="log in" />
+
   </form>
 </div>
+
+<script>
+</script>

@@ -9,15 +9,31 @@
   <meta property="og:title" content="{% block og_title %}{% endblock og_title %}" />
   <meta property="og:image" content="{% block og_image %}{% endblock og_image %}" />
   <title>{% block title %}XQZT CRPS{% endblock title %}</title>
+  <link rel="stylesheet" href="/public/css/unpoly.min.css">
   <link rel="stylesheet" href="/public/css/style.css">
 
-  <script href="/public/js/htmx.min.js"></script>
+  <script src="/public/js/htmx.min.js"></script>
 </head>
 
 <body>
   <div id="page_content">
-    {{content}}
+    {{content|safe}}
   </div>
+  <script>
+    if (typeof htmx !== 'undefined') {
+      console.log('htmx is loaded!');
+      htmx.on("htmx:afterSwap", function (event) {
+        var title = event.detail.xhr.getResponseHeader("HX-Title");
+        if (title) {
+          document.title = title;
+        }
+      });
+      // You can perform additional actions here
+    } else {
+      console.log('htmx is not loaded!');
+    }
+  </script>
+
 </body>
 
 </html>

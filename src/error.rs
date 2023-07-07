@@ -3,12 +3,16 @@ use serde::Serialize;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, strum_macros::AsRefStr)]
 pub enum Error {
     LogInFailure,
     DatabaseFailure,
     UserUidExpired,
     TemplateRenderingFailure,
+    DatabaseRecordNotFound,
+    DatabaseRecordAlreadyExists,
+    InvalidQueryParameters(String),
+    FreakUnknown,
 }
 
 impl core::fmt::Display for Error {
@@ -40,6 +44,7 @@ impl Error {
     pub fn status_and_client_error(&self) -> (StatusCode, ClientError) {
         match self {
             Self::LogInFailure => (StatusCode::UNAUTHORIZED, ClientError::LogInFailure),
+            Self::DatabaseRecordNotFound => (StatusCode::OK, ClientError::InternalServiceError),
             Self::DatabaseFailure => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 ClientError::InternalServiceError,

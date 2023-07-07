@@ -159,6 +159,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-bp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "askama",
+ "async-trait",
+ "axum",
+ "chrono",
+ "dotenv",
+ "env_logger",
+ "httpc-test",
+ "lazy-regex",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "sqlx",
+ "strum",
+ "strum_macros",
+ "tokio",
+ "tower-cookies",
+ "tower-http",
+ "uuid",
+ "walkdir",
+]
+
+[[package]]
 name = "axum-core"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -173,32 +201,6 @@ dependencies = [
  "rustversion",
  "tower-layer",
  "tower-service",
-]
-
-[[package]]
-name = "axum-media-notes"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "askama",
- "async-trait",
- "axum",
- "chrono",
- "dotenv",
- "env_logger",
- "httpc-test",
- "lazy-regex",
- "log",
- "serde",
- "serde_json",
- "serde_with",
- "sqlx",
- "strum_macros",
- "tokio",
- "tower-cookies",
- "tower-http",
- "uuid",
- "walkdir",
 ]
 
 [[package]]
@@ -1759,6 +1761,12 @@ name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
+
+[[package]]
+name = "strum"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "290d54ea6f91c969195bdbcd7442c8c2a2ba87da8bf60a7ee86a235d4bc1e125"
 
 [[package]]
 name = "strum_macros"

@@ -114,6 +114,13 @@ body,
 .full-size {
   width: 100%;
   height: 100%;
+  font-family: monospace;
+}
+
+fieldset {
+  padding: 0.2em;
+  display: flex;
+  flex-direction: column;
 }
 
 .flex {
@@ -126,6 +133,10 @@ body,
 
 .flex-2 {
   flex: 2;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
 }
 
 .flex-column {
@@ -156,4 +167,36 @@ body,
 
 .padding-05 {
   padding: 0.5em;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+td {
+  padding: 8px;
+  border: 1px solid #222;
+}
+
+thead {
+  background-color: #444;
+  color: #EEE;
+  font-weight: bold;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tbody tr:hover {
+  background-color: #e9e9e9;
+}
+
+.success {
+  border: 1px solid green;
+}
+
+.error {
+  border: 1px solid red;
 }

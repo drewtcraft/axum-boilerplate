@@ -1,0 +1,8 @@
+{% extends "email_base.html" %}
+
+{% block title %}XXX Invite{% endblock %}
+
+{% block body %}
+<p>You've been invited!</p>
+<a href="{{ acceptance_url }}" target="_blank">{{ acceptance_url }}</a>
+{% endblock %}

@@ -4,5 +4,8 @@ CREATE TABLE IF NOT EXISTS user_temp_uids (
     uid VARCHAR(100) NOT NULL,
     expires_at VARCHAR(30) NOT NULL,
     purpose VARCHAR(30) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+
+    FOREIGN KEY 
+        (user_id) REFERENCES users (id)
+    ON DELETE CASCADE
 );

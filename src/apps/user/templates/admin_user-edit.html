@@ -1,0 +1,61 @@
+<div>
+  {% if let Some(user_id) = user_id %}
+  <h1>Edit User {{ user_id }}</h1>
+  {% else %}
+  <h1>New User</h1>
+  {% endif %}
+
+  {% if let Some(success_message) = success_message %}
+  <div class="success">
+    {{success_message}}
+  </div>
+  {% endif %}
+
+  <form hx-post="{{ submit_url }}" hx-target="closest div">
+
+    <fieldset>
+      <label for="username">
+        username
+      </label>
+      <input type="text" name="username" value="{{ username.unwrap_or_default() }}" placeholder="d00d00man543" />
+      {% if let Some(username_input_error) = username_input_error %}
+      <div class="error">{{ username_input_error}}</div>
+      {% endif %}
+    </fieldset>
+
+    <fieldset>
+      <label for="email">
+        email
+      </label>
+      <input type="text" name="email" value="{{ email.unwrap_or_default() }}" placeholder="dog@god.com" />
+      {% if let Some(email_input_error) = email_input_error %}
+      <div class="error">{{ email_input_error }}</div>
+      {% endif %}
+    </fieldset>
+
+    <fieldset>
+      <label for="role">
+        role
+      </label>
+      <select name="role" value="{{ role.unwrap_or_default() }}">
+        <option value="admin">admin</option>
+        <option value="user">user</option>
+      </select>
+    </fieldset>
+
+    <fieldset>
+      <label for="active">
+        active
+      </label>
+      <select name="active" value="{{ active.unwrap_or_default() }}">
+        <option value="true">true</option>
+        <option value="false">false</option>
+      </select>
+    </fieldset>
+
+    <input type="submit" value="save" />
+  </form>
+  <button hx-delete="{{ submit_url }}">
+    delete
+  </button>
+</div>

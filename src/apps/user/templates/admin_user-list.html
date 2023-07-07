@@ -1,0 +1,97 @@
+<div class="form-container">
+  <h1>User List</h1>
+  <form class="flex flex-wrap" hx-get="/admin/users" hx-target=".form-container" hx-push-url="true">
+
+    <fieldset>
+      <label for="user_id">
+        user id
+      </label>
+      <input type="number" name="user_id" value="{{ user_id_input.unwrap_or_default() }}" placeholder="1" />
+      {% if let Some(user_id_input_error) = user_id_input_error %}
+      <div class="error">{{ user_id_input_error}}</div>
+      {% endif %}
+    </fieldset>
+
+    <fieldset>
+      <label for="username">
+        username
+      </label>
+      <input type="text" name="username" value="{{ username_input.unwrap_or_default() }}" placeholder="d00d00man543" />
+      {% if let Some(username_input_error) = username_input_error %}
+      <div class="error">{{ username_input_error}}</div>
+      {% endif %}
+    </fieldset>
+
+    <fieldset>
+      <label for="email">
+        email
+      </label>
+      <input type="text" name="email" value="{{ email_input.unwrap_or_default() }}" placeholder="dog@god.com" />
+      {% if let Some(email_input_error) = email_input_error %}
+      <div class="error">{{ email_input_error }}</div>
+      {% endif %}
+    </fieldset>
+
+    <fieldset>
+      <label for="role">
+        role
+      </label>
+      <select name="role" value="{{ role_input.unwrap_or_default() }}">
+        <option value="any">any</option>
+        <option value="admin">admin</option>
+        <option value="user">user</option>
+      </select>
+    </fieldset>
+
+    <fieldset>
+      <label for="active">
+        active
+      </label>
+      <select name="active" value="{{ active_input.unwrap_or_default() }}">
+        <option value="any">any</option>
+        <option value="active">active</option>
+        <option value="not_active">not active</option>
+      </select>
+    </fieldset>
+
+    <input type="submit" value="search" />
+  </form>
+  <table>
+    <thead>
+      <tr>
+        <td>id</td>
+        <td>username</td>
+        <td>email</td>
+        <td>role</td>
+        <td>active</td>
+        <td>created</td>
+        <td>updated</td>
+        <td></td>
+      </tr>
+    </thead>
+    <tbody>
+      {% if let Some(users_list) = users_list %}
+      {% for user in users_list %}
+      <tr>
+        <td>{{ user.id }}</td>
+        <td>{{ user.username.unwrap_or_default() }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.role }}</td>
+        <td>{{ user.active }}</td>
+        <td>{{ user.created_at }}</td>
+        <td>{{ user.updated_at }}</td>
+        <td><a href="/admin/users/{{ user.id }}">edit</a></td>
+      </tr>
+      {% endfor %}
+      {% else %}
+
+      <tr>
+        <td colspan="8">
+          no results
+        </td>
+      </tr>
+
+      {% endif %}
+    </tbody>
+  </table>
+</div>

@@ -5,7 +5,8 @@ A template for starting new, lean, beautiful rust backends.
 - Axum as the server framework with various Tower dependencies
 - Askana for HTML templating
 - SCSS for styling
-- HTMX for front end reactivity
+- htmx for front end reactivity
+- also... Alpine.js for front end stuff (I guess I'm imagining more complex behaviors, like clicking one field on a form disables another piece of it (don't need htmx for that!)) (can also set up some alpine stores in the base template if some sort of state needs to be maintained)
 - sqlx + sqlite for a simple database
 
 ## Structure
@@ -29,6 +30,8 @@ Full structure:
 - migrations/ -- sqlite migration files
 - data/ -- sqlite database files
 - public/ -- static files
+  - css/
+  - js/
 - build.rs -- build script, executed on cargo run|build
 - askama.toml -- configuration for views and partials
 
@@ -78,3 +81,27 @@ TODO: add a generator for this sort of thing?
 
 ## handlers
 - sometimes axum will complain if a type you're extracting doesn't implement Clone (Extension) or Deserialize(Json)
+
+# mvp stories
+as a dev, I want to ...
+- run a command to generate a super user
+- easily configure whether an email is printed or sent when developing locally
+
+as a user, I want to ...
+- receive an invite with a link to sign up
+- click a link to visit the sign up page and input my username
+- send an invite to a new prospective user
+- enter my email or username on a log in page to receive a log in email
+- click a link to get a cookie aka finish logging in
+- old invites should expire -- should be checked when I visit the invites page
+
+as an admin I want to ...
+- view a list of users
+- edit a specific user
+- create a user
+- delete a user
+
+push
+- users have limited number of invites
+- invites have a status that can be viewed
+- invites can be canceled

@@ -2,135 +2,410 @@ use log::{debug, error, info, warn};
 use std::sync::Arc;
 
 use askama::Template;
-use axum::extract::{Extension, Path, State};
+use axum::extract::{Extension, Path, Query, State};
 use axum::http::{Request, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
-use axum::{Form, Json};
-use serde::Deserialize;
+use axum::Form;
+use tower_cookies::cookie::time::Duration;
 use tower_cookies::{Cookie, Cookies};
-use uuid::Uuid;
 
+use serde::Deserialize;
+use std::str::FromStr;
+use strum_macros::{AsRefStr, EnumIter};
+
+use crate::apps::user::templates::{EmailLogInTemplate, LogOutTemplate, SendInviteTemplate};
 use crate::context::Context;
 use crate::error::{Error, Result};
+use crate::mailer::send_email;
 use crate::state::AppState;
-use crate::templates::BaseTemplate;
-use crate::util;
+use crate::traits::{ParamValidator, ToPlainText};
+use crate::utils::{get_own_url_with, self};
 
 use super::constants::SESSION_UID_COOKIE;
-use super::models::{user, user_temp_uid, user_temp_uid::TempUidPurpose};
-use super::templates::{LogInTemplate, SignUpTemplate};
-
-#[derive(Clone, Deserialize)]
-pub struct SignUpParams {
-    pub uid: String,
-}
+use super::models::{User, UserTempUid, UserTempUid::TempUidPurpose};
+use super::serializers::{
+    IdParam, LogInBody, SendInviteBody, SignUpBody, UidParam, UserEditParams, UserListParams,
+};
+use super::templates::{
+    AdminUserEditTemplate, AdminUserListTemplate, EmailInviteTemplate, LogInTemplate,
+    SignUpTemplate, UserListUser,
+};
 
 pub async fn get_sign_up(
-    Extension(context): Extension<Context>,
-    Path(params): Path<SignUpParams>,
+    Extension(mut context): Extension<Context>,
+    Path(params): Path<UidParam>,
     State(state): State<Arc<AppState>>,
-) -> Result<Response> {
-    debug!("Processing get_sign_up with uid: {}", &params.uid);
+) -> Result<impl IntoResponse> {
+    info!("Hit get_sign_up with uid: {}", &params.uid);
 
     let email =
-        user_temp_uid::get_user_email_from_uid(&state.db_pool, &params.uid, TempUidPurpose::SignUp)
+        UserTempUid::get_user_email_from_uid(&state.db_pool, &params.uid, TempUidPurpose::SignUp)
             .await?;
 
-    debug!("Got email from get_sign_up uid lookup: {}", email);
+    info!("Got email from get_sign_up uid lookup: {}", email);
 
-    let rendered_sign_up = SignUpTemplate { email }.render().unwrap();
-    Ok((StatusCode::OK, Html(rendered_sign_up)).into_response())
-}
+    let rendered_sign_up = SignUpTemplate::new_render(&email)?;
 
-#[derive(Clone, Deserialize)]
-pub struct SignUpBody {
-    pub username: String,
+    context.page_title = Some(String::from("donkey"));
+
+    let html = utils::render_template(Some(false), rendered_sign_up)?;
+
+    Ok(Html(html))
 }
 
 pub async fn post_sign_up(
     cookies: Cookies,
-    Path(params): Path<SignUpParams>,
+    Path(params): Path<UidParam>,
     State(state): State<Arc<AppState>>,
-    Json(payload): Json<SignUpBody>,
-) -> Result<Response> {
-    debug!(
-        "Processing post_sign_up with uid: {}, username: {}",
+    Form(payload): Form<SignUpBody>,
+) -> Result<impl IntoResponse> {
+    info!(
+        "Hit post_sign_up with uid: {}, username: {}",
         &params.uid, &payload.username
     );
 
-    // verify the username is available
-    //    -- if not, something interesting happens
-    if user::username_exists(&state.db_pool, &payload.username).await? {
-        debug!(
+    if User::username_exists(&state.db_pool, &payload.username).await? {
+        info!(
             "post_sign_up username: {} ALREADY EXISTS!",
             &payload.username
         );
-        todo!("return the form with an error I guess?")
+        let html = SignUpTemplate::new_render_error(
+            &payload.email,
+            Some(&payload.username),
+            Some("username taken"),
+        )?;
+        return Ok((Html(html)).into_response());
     }
 
-    let (user_id, email) =
-        user_temp_uid::validate_user_sign_up_temp_uid(&state.db_pool, &params.uid).await?;
+    // verify email is not taken
+    // return error if it is
 
-    debug!(
+    let (user_id, email) =
+        UserTempUid::validate_user_sign_up_temp_uid(&state.db_pool, &params.uid).await?;
+
+    info!(
         "post_sign_up retrieved user_id: {}, email: {}",
-        &user_id, &email, &params.uid
+        &user_id, &email
     );
 
-    user_temp_uid::delete_user_temp_uid(&state.db_pool, &params.uid).await?;
+    UserTempUid::delete_user_temp_uid(&state.db_pool, &params.uid).await?;
 
-    debug!("post_sign_up deleted uid."");
+    info!("post_sign_up deleted uid.");
 
     // augment the existing user with the username
-    user::activate_user(&state.db_pool, user_id, &payload.username).await?;
+    User::activate_user(&state.db_pool, user_id, &payload.username).await?;
 
-    debug!("post_sign_up activated user.")
+    info!("post_sign_up activated user.");
 
     // create a new uid for a session
-    let uid = user_temp_uid::create_user_session_temp_uid(&state.db_pool, user_id).await?;
+    let uid = UserTempUid::create_user_session_temp_uid(&state.db_pool, user_id).await?;
+
+    info!("post_sign_up created session uid: {}", uid);
 
     cookies.add(Cookie::new(SESSION_UID_COOKIE, uid));
+
+    info!("post_sign_up set session cookie.");
 
     Ok(Redirect::to("/").into_response())
 }
 
-pub async fn get_log_in(Extension(context): Extension<Context>) -> Result<Response> {
-    let rendered_login = LogInTemplate()
-        .render()
-        .map_err(|_| Error::TemplateRenderingFailure)?;
+pub async fn get_log_in(Extension(context): Extension<Context>) -> Result<impl IntoResponse> {
+    info!("Hit get_login.");
 
-    let rendered = util::render(context.is_htmx, rendered_login)?;
-    Ok((StatusCode::OK, Html(rendered)).into_response())
-}
+    let rendered_login = LogInTemplate::new_render()?;
 
-#[derive(Clone, Debug, Deserialize)]
-pub struct LogInBody {
-    username_or_email: String,
+    let rendered = utils::render_template(context.is_htmx, rendered_login)?;
+
+    Ok((StatusCode::OK, Html(rendered)))
 }
 
 pub async fn post_log_in(
     State(state): State<Arc<AppState>>,
-    Json(payload): Json<LogInBody>,
-) -> Result<Response> {
+    Form(payload): Form<LogInBody>,
+) -> Result<impl IntoResponse> {
+    // if incorrect email, LogInTemplate::new_submit_error(xxx)
+
+    info!(
+        "Hit post_log_in with username or email: {}.",
+        &payload.username_or_email
+    );
+
     let (user_id, email) =
-        user::user_by_username_or_email(&state.db_pool, &payload.username_or_email).await?;
+        User::user_by_username_or_email(&state.db_pool, &payload.username_or_email).await?;
 
-    let uid = user_temp_uid::create_user_log_in_temp_uid(&state.db_pool, user_id).await?;
+    info!("post_log_in got user_id {} and email {}", &user_id, &email);
 
-    // render email template using uid
+    let uid = UserTempUid::create_user_log_in_temp_uid(&state.db_pool, user_id).await?;
 
-    // send email
+    info!("post_log_in generated log in uid");
 
-    // render "email sent you can close this page" template
+    let path = format!("/log-in/{}", &uid);
+    let log_in_url = get_own_url_with(&path);
 
-    //
+    info!("post_log_in generated log in url: {}", &log_in_url);
 
-    todo!()
+    let (html, plain_text) = EmailLogInTemplate::new(log_in_url).render_html_and_plain_text()?;
+
+    #[cfg(not(debug_assertions))]
+    send_email(
+        &email,
+        "Here's your one time login for XXXX",
+        html,
+        plain_text,
+    )
+    .await?;
+
+    Ok((StatusCode::OK, Html(html)))
 }
 
-pub async fn log_out() -> impl IntoResponse {
-    todo!()
+pub async fn log_out(
+    cookies: Cookies,
+    State(state): State<Arc<AppState>>,
+    Extension(context): Extension<Context>,
+) -> Result<impl IntoResponse> {
+    info!("hit log_out");
+    if let Some(user_data) = context.user_data {
+        info!("deleting user session on log_out");
+        UserTempUid::delete_user_temp_uid(&state.db_pool, &user_data.session_uid).await?;
+    }
+
+    let mut cookie = Cookie::named(SESSION_UID_COOKIE);
+    cookie.set_max_age(Duration::seconds(0));
+    cookies.add(cookie);
+
+    let rendered_logout = LogOutTemplate::new_render()?;
+    let rendered = utils::render_template(context.is_htmx, rendered_logout)?;
+
+    Ok((StatusCode::OK, Html(rendered)))
 }
 
-pub async fn get_send_invite(context: Context) -> Result<Response> {
-    todo!()
+pub async fn get_send_invite(Extension(context): Extension<Context>) -> Result<impl IntoResponse> {
+    info!("Hit get_login.");
+
+    // TODO delete expired invites
+
+    let rendered_invite = SendInviteTemplate::new_render()?;
+
+    let rendered = utils::render_template(context.is_htmx, rendered_invite)?;
+
+    Ok((StatusCode::OK, Html(rendered)))
+}
+
+pub async fn post_send_invite(
+    State(state): State<Arc<AppState>>,
+    Form(payload): Form<SendInviteBody>,
+) -> Result<impl IntoResponse> {
+    let email = payload.email;
+    let role = payload
+        .role
+        .unwrap_or(User::UserRole::user.as_ref().to_string());
+
+    // verify email is not taken
+    if User::email_exists(&state.db_pool, &email).await? {
+        todo!();
+    }
+
+    // create new stub user
+    let user_id = User::create_user(
+        &state.db_pool,
+        None,
+        &email,
+        false,
+        User::UserRole::from_str(&role).unwrap(),
+    )
+    .await?;
+
+    let uid = UserTempUid::create_user_sign_up_temp_uid(&state.db_pool, user_id).await?;
+
+    let path = format!("/accept-invite/{}", &uid);
+    let acceptance_url = get_own_url_with(&path);
+
+    let template = EmailInviteTemplate::new(acceptance_url);
+
+    let html = template
+        .render()
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+
+    send_email(
+        &email,
+        "You've been invited to join XXX",
+        html,
+        template.to_plain_text(),
+    )
+    .await?;
+
+    Ok((StatusCode::OK, Html("")))
+}
+
+pub async fn get_cookie(
+    cookies: Cookies,
+    State(state): State<Arc<AppState>>,
+    Path(params): Path<UidParam>,
+) -> Result<impl IntoResponse> {
+    info!("get_cookie hit");
+    let (user_id, _) =
+        UserTempUid::validate_user_log_in_temp_uid(&state.db_pool, &params.uid).await?;
+    info!("validated temp uid");
+
+    UserTempUid::delete_user_temp_uid(&state.db_pool, &params.uid)
+        .await
+        .unwrap_or(()); // ok if this fails
+
+    // create a new uid for a session
+    let uid = UserTempUid::create_user_session_temp_uid(&state.db_pool, user_id).await?;
+
+    info!("get_cookie created session uid: {}", &uid);
+
+    // TODO abstract
+
+    let mut cookie = Cookie::new(SESSION_UID_COOKIE, uid);
+    cookie.set_path("/");
+
+    cookies.add(cookie);
+
+    info!("get_cookie set session cookie.");
+
+    Ok(Redirect::to("/"))
+}
+
+pub async fn list_users(
+    State(state): State<Arc<AppState>>,
+    Extension(context): Extension<Context>,
+    Query(query_params): Query<UserListParams>,
+) -> Result<impl IntoResponse> {
+    info!("admin list_users hit");
+    let (valid, errors) = query_params.validate();
+    if !valid {
+        info!("admin list_users invalid params");
+        let rendered_user_list = AdminUserListTemplate::new_render_error(
+            query_params
+                .user_id
+                .as_ref()
+                .map(|s| s.to_string())
+                .as_ref()
+                .map(|s| s.as_str()),
+            errors.user_id.as_ref().map(|s| s.as_str()),
+            query_params.username.as_ref().map(|s| s.as_str()),
+            errors.username.as_ref().map(|s| s.as_str()),
+            query_params.active.as_ref().map(|s| s.as_str()),
+            query_params.email.as_ref().map(|s| s.as_str()),
+            errors.email.as_ref().map(|s| s.as_str()),
+            query_params.role.as_ref().map(|s| s.as_str()),
+            query_params.sort_by.as_ref().map(|s| s.as_str()),
+            query_params.sort_dir.as_ref().map(|s| s.as_str()),
+        )?;
+
+        let html = utils
+::render_template(context.is_htmx, rendered_user_list)?;
+        return Ok((StatusCode::OK, Html(html)));
+    }
+
+    let users = User::list_users(&state.db_pool, &query_params).await?;
+    info!("admin list_users found some users");
+
+    let formatted_users: Vec<UserListUser> = users
+        .iter()
+        .map(|user| UserListUser {
+            id: user.id,
+            username: user.username.as_ref().map(|s| s.as_str()),
+            email: &user.email,
+            active: user.active,
+            role: &user.role,
+            created_at: &user.created_at,
+            updated_at: &user.updated_at,
+        })
+        .collect();
+
+    let users_list = if formatted_users.is_empty() {
+        info!("did not find any users");
+        None
+    } else {
+        info!("found {} users", &formatted_users.len());
+        Some(formatted_users)
+    };
+
+    let rendered_user_list = AdminUserListTemplate::new_render(
+        users_list,
+        query_params
+            .user_id
+            .as_ref()
+            .map(|s| s.to_string())
+            .as_ref()
+            .map(|s| s.as_str()),
+        query_params.username.as_ref().map(|s| s.as_str()),
+        query_params.active.as_ref().map(|s| s.as_str()),
+        query_params.email.as_ref().map(|s| s.as_str()),
+        query_params.role.as_ref().map(|s| s.as_str()),
+        query_params.sort_by.as_ref().map(|s| s.as_str()),
+        query_params.sort_dir.as_ref().map(|s| s.as_str()),
+    )?;
+
+    let html = utils::render_template(context.is_htmx, rendered_user_list)?;
+    Ok((StatusCode::OK, Html(html)))
+}
+
+pub async fn admin_get_edit_user(
+    State(state): State<Arc<AppState>>,
+    Extension(context): Extension<Context>,
+    Path(params): Path<IdParam>,
+) -> Result<impl IntoResponse> {
+    let user = User::get_user(&state.db_pool, params.id).await?;
+    // TODO there should be a more ergonomic way to do this
+    let user_id_str = user.id.to_string();
+    let submit_url = format!("/admin/users/{}", user.id);
+    let rendered_user_edit = AdminUserEditTemplate::new_render_existing(
+        &user_id_str,
+        user.username.as_ref().map(|s| s.as_str()),
+        user.email.as_str(),
+        user.active,
+        user.role.as_str(),
+        &submit_url.as_str(),
+        None,
+    )?;
+    let html = utils::render_template(context.is_htmx, rendered_user_edit)?;
+    Ok(Html(html))
+}
+
+pub async fn admin_post_edit_user(
+    State(state): State<Arc<AppState>>,
+    Extension(context): Extension<Context>,
+    Path(params): Path<IdParam>,
+    Form(payload): Form<UserEditParams>, // may need to be Json
+) -> Result<impl IntoResponse> {
+    let (valid, errors) = payload.validate();
+    let user_id_str = params.id.to_string();
+    let submit_url = format!("/admin/users/{}", params.id);
+    if !valid {
+        let rendered_user_edit = AdminUserEditTemplate::new_render_error(
+            Some(user_id_str.as_str()),
+            payload.username.as_ref().map(|s| s.as_ref()),
+            errors.username.as_ref().map(|s| s.as_ref()),
+            Some(payload.email.as_str()),
+            errors.email.as_ref().map(|s| s.as_ref()),
+            Some(payload.active),
+            Some(payload.role.as_str()),
+            submit_url.as_str(),
+        )?;
+        let html = utils
+::render_template(context.is_htmx, rendered_user_edit)?;
+        return Ok(Html(html));
+    }
+
+    // edit user
+    let edited_user = User::edit_user(&state.db_pool, params.id, &payload).await?;
+    // render template with new user & send
+    let success_message = format!("successfully updated user at {}", &edited_user.updated_at);
+    // let success_message = String::from("honk");
+    let rendered_user_edit = AdminUserEditTemplate::new_render_existing(
+        &user_id_str,
+        payload.username.as_ref().map(|s| s.as_str()),
+        &payload.email,
+        payload.active,
+        &payload.role,
+        submit_url.as_str(),
+        Some(success_message.as_str()),
+    )?;
+    let html = utils::render_template(context.is_htmx, rendered_user_edit)?;
+
+    Ok(Html(html))
 }

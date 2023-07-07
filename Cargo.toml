@@ -1,5 +1,5 @@
 [package]
-name = "axum-media-notes"
+name = "axum-bp"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
@@ -19,9 +19,11 @@ askama = "0.12.0"
 sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "sqlite"]}
 dotenv = "0.15.0"
 chrono = "0.4.26"
+strum = "0.25.0"
 strum_macros = "0.24.3"
 log = "0.4"
 env_logger = "0.9"
+reqwest = "0.11.18"
 
 [dev-dependencies]
 anyhow = "1"
