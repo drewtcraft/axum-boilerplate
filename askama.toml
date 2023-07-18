@@ -1,3 +1,3 @@
 [general]
 # Directories to search for templates, relative to the crate root.
-dirs = ["src/templates", "src/apps/user/templates"]
+dirs = ["src/templates", "src/apps/user/templates", "src/apps/forum/templates"]

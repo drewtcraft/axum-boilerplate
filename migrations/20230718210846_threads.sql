@@ -1,0 +1,17 @@
+CREATE TABLE threads (
+    id INTEGER PRIMARY KEY NOT NULL,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TRIGGER 
+    update_thread
+AFTER UPDATE ON 
+    threads
+FOR EACH ROW
+BEGIN
+    UPDATE threads SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
