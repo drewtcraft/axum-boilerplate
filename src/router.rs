@@ -15,6 +15,7 @@ use crate::{
     apps::user::{self, layers::pull_user_id_from_session_uid},
     layers,
     state::AppState,
+    error::Result,
 };
 
 pub fn get_routes(state: Arc<AppState>) -> Router {
@@ -36,9 +37,10 @@ fn static_routes() -> Router {
     Router::new().nest_service("/public", get_service(ServeDir::new("./public")))
 }
 
-async fn page_not_found() -> impl IntoResponse {
-    (
+async fn page_not_found() -> Result<impl IntoResponse> {
+    
+    Ok((
         StatusCode::NOT_FOUND,
         Html("<p><strong>404</strong> Page Not Found</p>"),
-    )
+    ))
 }

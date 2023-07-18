@@ -1,4 +1,4 @@
-use crate::templates::ErrorTemplate;
+use crate::{templates::ErrorTemplate, utils};
 use axum::{
     http::{HeaderMap, HeaderName, HeaderValue, Request},
     middleware::Next,
@@ -12,10 +12,12 @@ use crate::{
 };
 
 pub async fn title_mapper(res: Response) -> Response {
+    // if is_htmx and we have a page_title, set HX-Title header
     let context = res.extensions().get::<Context>();
     if context.is_none() {
         return res;
     }
+
     let context = context.unwrap().clone();
     if context.is_htmx.is_some() && context.is_htmx.unwrap() && context.page_title.is_some() {
         let mut new_response = Response::from(res);
@@ -31,6 +33,7 @@ pub async fn title_mapper(res: Response) -> Response {
 
 pub async fn result_mapper(res: Response) -> Response {
     let error = res.extensions().get::<Error>();
+    let context = res.extensions().get::<Context>();
 
     match error {
         Some(err) => warn!("err: {}", err.as_ref()),
@@ -42,7 +45,13 @@ pub async fn result_mapper(res: Response) -> Response {
         .map(|server_error| {
             let (status_code, client_error) = server_error.status_and_client_error();
             let status_code_str = status_code.to_string();
-            let html = ErrorTemplate::new(client_error.as_ref(), &status_code_str);
+            let rendered_error = ErrorTemplate::new(client_error.as_ref(), &status_code_str);
+            let html = if let Some(context) = context {
+                utils::render_template(context.is_htmx, rendered_error.clone())
+                    .unwrap_or(rendered_error)
+            } else {
+                rendered_error
+            };
             (status_code, Html(html)).into_response()
         })
         .unwrap_or(res)
