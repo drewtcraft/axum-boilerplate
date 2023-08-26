@@ -57,22 +57,22 @@ impl SignUpTemplate {
     }
 }
 
-#[derive(Template)]
-#[template(path = "send-invite.html")]
-pub struct SendInviteTemplate<'a> {
-    input_error: Option<&'a str>,
+#[derive(TemplateOnce)]
+#[template(path = "send-invite.stpl")]
+pub struct SendInviteTemplate {
+    pub input_error: Option<String>,
 }
 
-impl<'a> SendInviteTemplate<'a> {
+impl SendInviteTemplate {
     pub fn new_render() -> Result<String> {
         Self { input_error: None }
-            .render()
+            .render_once()
             .map_err(|_| Error::TemplateRenderingFailure)
     }
 
-    pub fn new_render_error(input_error: Option<&'a str>) -> Result<String> {
+    pub fn new_render_error(input_error: Option<String>) -> Result<String> {
         Self { input_error }
-            .render()
+            .render_once()
             .map_err(|_| Error::TemplateRenderingFailure)
     }
 }
