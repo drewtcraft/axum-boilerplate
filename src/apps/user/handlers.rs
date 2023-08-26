@@ -14,6 +14,7 @@ use serde::Deserialize;
 use std::str::FromStr;
 use strum_macros::{AsRefStr, EnumIter};
 
+use crate::apps::user::models;
 use crate::apps::user::templates::{EmailLogInTemplate, LogOutTemplate, SendInviteTemplate, LogInTemplate};
 use crate::context::Context;
 use crate::error::{Error, Result};
@@ -28,8 +29,8 @@ use super::serializers::{
     IdParam, LogInBody, SendInviteBody, SignUpBody, UidParam, UserEditParams, UserListParams,
 };
 use super::templates::{
-    /*AdminUserEditTemplate,*/ /*AdminUserListTemplate,*/ EmailInviteTemplate,
-    SignUpTemplate, /*UserListUser,*/
+    /*AdminUserEditTemplate,*/ AdminUserListTemplate, EmailInviteTemplate,
+    SignUpTemplate, UserListUser,
 };
 
 pub async fn get_sign_up(
@@ -260,52 +261,52 @@ pub async fn get_cookie(
     Ok(Redirect::to("/"))
 }
 
-// pub async fn list_users(
-//     State(state): State<Arc<AppState>>,
-//     Extension(context): Extension<Context>,
-//     Query(query_params): Query<UserListParams>,
-// ) -> Result<impl IntoResponse> {
-//     info!("admin list_users hit");
-//     let (valid, errors) = query_params.validate();
-//     let user_roles = models::UserRole::list_user_roles(&state.db_pool).await?;
-//     if !valid {
-//         info!("admin list_users invalid params");
-//         let rendered_user_list =
-//             AdminUserListTemplate::new_render_error(user_roles, query_params, errors)?;
+pub async fn list_users(
+    State(state): State<Arc<AppState>>,
+    Extension(context): Extension<Context>,
+    Query(query_params): Query<UserListParams>,
+) -> Result<impl IntoResponse> {
+    info!("admin list_users hit");
+    let (valid, errors) = query_params.validate();
+    let user_roles = models::UserRole::list_user_roles(&state.db_pool).await?;
+    if !valid {
+        info!("admin list_users invalid params");
+        let rendered_user_list =
+            AdminUserListTemplate::new_render_error(user_roles, query_params, errors)?;
 
-//         let html = utils::render_template(context.is_htmx, rendered_user_list)?;
-//         return Ok((StatusCode::OK, Html(html)));
-//     }
+        let html = utils::render_template(context.is_htmx, rendered_user_list)?;
+        return Ok((StatusCode::OK, Html(html)));
+    }
 
-//     let users = User::list_users(&state.db_pool, &query_params).await?;
-//     info!("admin list_users found some users");
+    let users = User::list_users(&state.db_pool, &query_params).await?;
+    info!("admin list_users found some users");
 
-//     let formatted_users: Vec<UserListUser> = users
-//         .iter()
-//         .map(|user| UserListUser {
-//             id: user.id,
-//             username: user.username.clone(),
-//             email: user.email.clone(),
-//             active: user.active,
-//             user_role_id: user.user_role_id as usize,
-//             created_at: user.created_at.clone(),
-//             updated_at: user.updated_at.clone(),
-//         })
-//         .collect();
+    let formatted_users: Vec<UserListUser> = users
+        .iter()
+        .map(|user| UserListUser {
+            id: user.id,
+            username: user.username.clone(),
+            email: user.email.clone(),
+            active: user.active,
+            user_role_id: user.user_role_id as usize,
+            created_at: user.created_at.clone(),
+            updated_at: user.updated_at.clone(),
+        })
+        .collect();
 
-//     let users_list = if formatted_users.is_empty() {
-//         None
-//     } else {
-//         Some(formatted_users)
-//     };
+    let users_list = if formatted_users.is_empty() {
+        None
+    } else {
+        Some(formatted_users)
+    };
 
-//     let rendered_user_list =
-//         AdminUserListTemplate::new_render(users_list, user_roles, query_params)?;
+    let rendered_user_list =
+        AdminUserListTemplate::new_render(users_list, user_roles, query_params)?;
 
-//     let html = utils::render_template(context.is_htmx, rendered_user_list)?;
+    let html = utils::render_template(context.is_htmx, rendered_user_list)?;
 
-//     Ok((StatusCode::OK, Html(html)))
-// }
+    Ok((StatusCode::OK, Html(html)))
+}
 
 // pub async fn admin_get_edit_user(
 //     State(state): State<Arc<AppState>>,
