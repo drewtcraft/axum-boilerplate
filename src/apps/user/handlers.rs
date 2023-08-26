@@ -1,6 +1,7 @@
 use log::{debug, error, info, warn};
 use std::sync::Arc;
 
+use sailfish::TemplateOnce;
 use askama::Template;
 use axum::extract::{Extension, Path, Query, State};
 use axum::http::{Request, StatusCode};
@@ -212,15 +213,16 @@ pub async fn post_send_invite(
 
     let template = EmailInviteTemplate::new(acceptance_url);
 
+    let plain_text = template.to_plain_text();
     let html = template
-        .render()
+        .render_once()
         .map_err(|_| Error::TemplateRenderingFailure)?;
 
     send_email(
         &email,
         "You've been invited to join XXX",
         html,
-        template.to_plain_text(),
+        plain_text,
     )
     .await?;
 

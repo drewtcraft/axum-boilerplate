@@ -1,0 +1,4 @@
+<h1>XXX Invite</h1>
+
+<p>You've been invited!</p>
+<a href="<%= acceptance_url %>" target="_blank"><%= acceptance_url %></a>

@@ -91,8 +91,8 @@ impl LogOutTemplate {
 // EMAIL TEMPLATES
 // ---------------
 
-#[derive(Template)]
-#[template(path = "email_invite.html")]
+#[derive(TemplateOnce)]
+#[template(path = "email_invite.stpl")]
 pub struct EmailInviteTemplate {
     pub acceptance_url: String,
 }
@@ -109,8 +109,8 @@ impl ToPlainText for EmailInviteTemplate {
     }
 }
 
-#[derive(Template)]
-#[template(path = "email_log-in.html")]
+#[derive(TemplateOnce)]
+#[template(path = "email_log-in.stpl")]
 pub struct EmailLogInTemplate {
     pub log_in_url: String,
 }

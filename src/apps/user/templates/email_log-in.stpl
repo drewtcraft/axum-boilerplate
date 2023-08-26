@@ -1,0 +1,2 @@
+<p>here's the link!</p>
+<a href="<%= log_in_url %>" target="_blank"><%= log_in_url %></a>
