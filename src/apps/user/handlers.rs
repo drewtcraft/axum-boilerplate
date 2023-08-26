@@ -13,7 +13,7 @@ use serde::Deserialize;
 use std::str::FromStr;
 use strum_macros::{AsRefStr, EnumIter};
 
-use crate::apps::user::templates::{EmailLogInTemplate, LogOutTemplate, SendInviteTemplate};
+use crate::apps::user::templates::{EmailLogInTemplate, LogOutTemplate, SendInviteTemplate, LogInTemplate};
 use crate::context::Context;
 use crate::error::{Error, Result};
 use crate::mailer::send_email;
@@ -22,13 +22,12 @@ use crate::traits::{ParamValidator, ToPlainText};
 use crate::utils::{self, get_own_url_with};
 
 use super::constants::SESSION_UID_COOKIE;
-use super::models;
 use super::models::{User, UserTempUid, UserTempUid::TempUidPurpose};
 use super::serializers::{
     IdParam, LogInBody, SendInviteBody, SignUpBody, UidParam, UserEditParams, UserListParams,
 };
 use super::templates::{
-    /*AdminUserEditTemplate,*/ /*AdminUserListTemplate,*/ EmailInviteTemplate, LogInTemplate,
+    /*AdminUserEditTemplate,*/ /*AdminUserListTemplate,*/ EmailInviteTemplate,
     SignUpTemplate, /*UserListUser,*/
 };
 
@@ -45,7 +44,7 @@ pub async fn get_sign_up(
 
     info!("Got email from get_sign_up uid lookup: {}", email);
 
-    let rendered_sign_up = SignUpTemplate::new_render(&email)?;
+    let rendered_sign_up = SignUpTemplate::new_render(email)?;
 
     context.page_title = Some(String::from("donkey"));
 
@@ -71,9 +70,9 @@ pub async fn post_sign_up(
             &payload.username
         );
         let html = SignUpTemplate::new_render_error(
-            &payload.email,
-            Some(&payload.username),
-            Some("username taken"),
+            payload.email,
+            Some(payload.username),
+            Some("username taken".to_string()),
         )?;
         return Ok(Html(html).into_response());
     }

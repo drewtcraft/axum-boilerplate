@@ -5,13 +5,17 @@ use super::serializers::{UserListParams, UserListParamsErrors};
 use sailfish::TemplateOnce;
 
 
+
+// --------------
+// USER TEMPLATES
+// --------------
 #[derive(TemplateOnce)]
 #[template(path = "log-in.stpl")]
-pub struct SFLogInTemplate {
+pub struct LogInTemplate {
     pub input_error: Option<String>,
 }
 
-impl SFLogInTemplate {
+impl LogInTemplate {
     pub fn new_render() -> Result<String> {
         Self { input_error: None }
             .render_once()
@@ -19,59 +23,36 @@ impl SFLogInTemplate {
     }
 }
 
-// --------------
-// USER TEMPLATES
-// --------------
-#[derive(Template)]
-#[template(path = "log-in.html")]
-pub struct LogInTemplate<'a> {
-    pub input_error: Option<&'a str>,
+#[derive(TemplateOnce)]
+#[template(path = "sign-up.stpl")]
+pub struct SignUpTemplate {
+    pub attached_email: String,
+    pub username: Option<String>,
+    pub username_input_error: Option<String>,
 }
 
-impl<'a> LogInTemplate<'a> {
-    pub fn new_render() -> Result<String> {
-        Self { input_error: None }
-            .render()
-            .map_err(|_| Error::TemplateRenderingFailure)
-    }
-
-    pub fn new_render_error(input_error: Option<&'a str>) -> Result<String> {
-        Self { input_error }
-            .render()
-            .map_err(|_| Error::TemplateRenderingFailure)
-    }
-}
-
-#[derive(Template)]
-#[template(path = "sign-up.html")]
-pub struct SignUpTemplate<'a> {
-    pub attached_email: &'a str,
-    pub username: Option<&'a str>,
-    pub username_input_error: Option<&'a str>,
-}
-
-impl<'a> SignUpTemplate<'a> {
-    pub fn new_render(attached_email: &'a str) -> Result<String> {
+impl SignUpTemplate {
+    pub fn new_render(attached_email: String) -> Result<String> {
         Self {
             attached_email,
             username: None,
             username_input_error: None,
         }
-        .render()
+        .render_once()
         .map_err(|_| Error::TemplateRenderingFailure)
     }
 
     pub fn new_render_error(
-        attached_email: &'a str,
-        username: Option<&'a str>,
-        username_input_error: Option<&'a str>,
+        attached_email: String,
+        username: Option<String>,
+        username_input_error: Option<String>,
     ) -> Result<String> {
         Self {
             attached_email,
             username,
             username_input_error,
         }
-        .render()
+        .render_once()
         .map_err(|_| Error::TemplateRenderingFailure)
     }
 }
