@@ -77,13 +77,13 @@ impl SendInviteTemplate {
     }
 }
 
-#[derive(Template)]
-#[template(path = "log-out.html")]
-pub struct LogOutTemplate();
+#[derive(TemplateOnce)]
+#[template(path = "log-out.stpl")]
+pub struct LogOutTemplate;
 
 impl LogOutTemplate {
     pub fn new_render() -> Result<String> {
-        Self().render().map_err(|_| Error::TemplateRenderingFailure)
+        Self.render_once().map_err(|_| Error::TemplateRenderingFailure)
     }
 }
 
