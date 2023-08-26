@@ -82,7 +82,7 @@ pub mod User {
             .push(", email =")
             .push_bind(&user_params.email)
             .push(", user_role_id = (SELECT id FROM user_roles WHERE name =")
-            .push_bind(&user_params.role)
+            .push_bind(&user_params.user_role_id)
             .push("), active =")
             .push_bind(&user_params.active)
             .push(" WHERE id =")

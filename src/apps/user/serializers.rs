@@ -36,7 +36,7 @@ pub struct UserEditParams {
     pub username: Option<String>,
     pub email: String,
     pub active: bool,
-    pub role: i32,
+    pub user_role_id: i32,
 }
 
 pub struct UserEditParamsErrors {

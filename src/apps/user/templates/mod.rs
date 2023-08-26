@@ -1,7 +1,7 @@
-use super::serializers::{UserListParams, UserListParamsErrors};
+use super::serializers::{UserListParams, UserListParamsErrors, UserEditParams, UserEditParamsErrors};
+use crate::apps::user::models::User;
 use crate::error::{Error, Result};
 use crate::traits::{ParamValidationError, ToPlainText};
-use askama::Template;
 use sailfish::TemplateOnce;
 
 // --------------
@@ -130,6 +130,7 @@ impl ToPlainText for EmailLogInTemplate {
 // ADMIN TEMPLATES
 // ---------------
 
+#[derive(Clone)]
 pub struct UserListUser {
     pub id: i64,
     pub username: Option<String>,
@@ -143,7 +144,7 @@ pub struct UserListUser {
 #[derive(TemplateOnce)]
 #[template(path = "admin_user-list.stpl")]
 pub struct AdminUserListTemplate {
-    pub users_list: Option<Vec<UserListUser>>,
+    pub users_list: Vec<UserListUser>,
     pub user_roles: Vec<(i32, String)>,
     pub query_params: UserListParams,
     pub query_params_errors: UserListParamsErrors,
@@ -151,12 +152,25 @@ pub struct AdminUserListTemplate {
 
 impl AdminUserListTemplate {
     pub fn new_render(
-        users_list: Option<Vec<UserListUser>>,
+        users_list: Vec<User::User>,
         user_roles: Vec<(i32, String)>,
         query_params: UserListParams,
     ) -> Result<String> {
+        let formatted_users: Vec<UserListUser> = users_list
+            .iter()
+            .map(|user| UserListUser {
+                id: user.id,
+                username: user.username.clone(),
+                email: user.email.clone(),
+                active: user.active,
+                user_role_id: user.user_role_id as usize,
+                created_at: user.created_at.clone(),
+                updated_at: user.updated_at.clone(),
+            })
+            .collect();
+
         Self {
-            users_list,
+            users_list: formatted_users,
             user_roles,
             query_params,
             query_params_errors: UserListParamsErrors::new_empty(),
@@ -171,7 +185,7 @@ impl AdminUserListTemplate {
         query_params_errors: UserListParamsErrors,
     ) -> Result<String> {
         Self {
-            users_list: None,
+            users_list: vec![],
             user_roles,
             query_params,
             query_params_errors,
@@ -181,94 +195,53 @@ impl AdminUserListTemplate {
     }
 }
 
-// #[derive(Template)]
-// #[template(path = "admin_user-edit.html")]
-// pub struct AdminUserEditTemplate<'a> {
-//     pub user_id: Option<&'a str>,
+#[derive(TemplateOnce)]
+#[template(path = "admin_user-edit.stpl")]
+pub struct AdminUserEditTemplate {
+    pub user_id: Option<String>,
+    pub user_roles: Vec<(i32, String)>,
+    pub query_params: UserEditParams,
+    pub query_params_errors: UserEditParamsErrors,
+    pub success_message: Option<String>,
+    pub submit_url: String,
+}
 
-//     pub username: Option<&'a str>,
-//     pub username_input_error: FieldError<'a>,
+impl AdminUserEditTemplate {
+    pub fn new_render_error(
+        user_id: Option<String>,
+        user_roles: Vec<(i32, String)>,
+        query_params: UserEditParams,
+        query_params_errors: UserEditParamsErrors,
+        submit_url: String,
+    ) -> Result<String> {
+        Self {
+            user_id,
+            user_roles,
+            query_params,
+            query_params_errors,
+            submit_url,
+            success_message: None,
+        }
+        .render_once()
+        .map_err(|_| Error::TemplateRenderingFailure)
+    }
 
-//     pub email: Option<&'a str>,
-//     pub email_input_error: FieldError<'a>,
-
-//     pub active: Option<bool>,
-
-//     pub user_role_id: usize,
-
-//     pub success_message: Option<&'a str>,
-//     pub submit_url: &'a str,
-//     pub user_roles: Vec<(i32, String)>,
-// }
-
-// impl<'a> AdminUserEditTemplate<'a> {
-//     pub fn new_render_error(
-//         user_roles: Vec<(i32, String)>,
-//         user_id: Option<&'a str>,
-//         username: Option<&'a str>,
-//         username_input_error: FieldError<'a>,
-//         email: Option<&'a str>,
-//         email_input_error: FieldError<'a>,
-//         active: Option<bool>,
-//         user_role_id: Option<usize>,
-//         submit_url: &'a str,
-//     ) -> Result<String> {
-//         Self {
-//             user_roles,
-//             user_id,
-//             username,
-//             username_input_error,
-//             email,
-//             email_input_error,
-//             active,
-//             user_role_id,
-//             submit_url,
-//             success_message: None,
-//         }
-//         .render()
-//         .map_err(|_| Error::TemplateRenderingFailure)
-//     }
-
-//     pub fn new_render_existing(
-//         user_roles: Vec<(i32, String)>,
-//         user_id: &'a String,
-//         username: Option<&'a str>,
-//         email: &'a str,
-//         active: bool,
-//         user_role_id: usize,
-//         submit_url: &'a str,
-//         success_message: Option<&'a str>,
-//     ) -> Result<String> {
-//         Self {
-//             user_roles,
-//             user_id: Some(user_id.as_str()),
-//             username,
-//             username_input_error: None,
-//             email: Some(email),
-//             email_input_error: None,
-//             active: Some(active),
-//             user_role_id: Some(&user_role_id),
-//             submit_url,
-//             success_message,
-//         }
-//         .render()
-//         .map_err(|_| Error::TemplateRenderingFailure)
-//     }
-
-//     pub fn new_render_blank(submit_url: &'a str, user_roles: Vec<(i32, String)>) -> Result<String> {
-//         Self {
-//             user_roles,
-//             user_id: None,
-//             username: None,
-//             username_input_error: None,
-//             email: None,
-//             email_input_error: None,
-//             active: None,
-//             user_role_id: None,
-//             submit_url,
-//             success_message: None,
-//         }
-//         .render()
-//         .map_err(|_| Error::TemplateRenderingFailure)
-//     }
-// }
+    pub fn new_render_existing(
+        user_id: String,
+        user_roles: Vec<(i32, String)>,
+        query_params: UserEditParams,
+        submit_url: String,
+        success_message: Option<String>,
+    ) -> Result<String> {
+        Self {
+            user_id: Some(user_id),
+            user_roles,
+            query_params,
+            query_params_errors: UserEditParamsErrors::new_empty(),
+            submit_url,
+            success_message,
+        }
+        .render_once()
+        .map_err(|_| Error::TemplateRenderingFailure)
+    }
+}

@@ -281,27 +281,8 @@ pub async fn list_users(
     let users = User::list_users(&state.db_pool, &query_params).await?;
     info!("admin list_users found some users");
 
-    let formatted_users: Vec<UserListUser> = users
-        .iter()
-        .map(|user| UserListUser {
-            id: user.id,
-            username: user.username.clone(),
-            email: user.email.clone(),
-            active: user.active,
-            user_role_id: user.user_role_id as usize,
-            created_at: user.created_at.clone(),
-            updated_at: user.updated_at.clone(),
-        })
-        .collect();
-
-    let users_list = if formatted_users.is_empty() {
-        None
-    } else {
-        Some(formatted_users)
-    };
-
     let rendered_user_list =
-        AdminUserListTemplate::new_render(users_list, user_roles, query_params)?;
+        AdminUserListTemplate::new_render(users, user_roles, query_params)?;
 
     let html = utils::render_template(context.is_htmx, rendered_user_list)?;
 

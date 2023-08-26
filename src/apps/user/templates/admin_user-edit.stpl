@@ -1,0 +1,62 @@
+<div>
+  <% if let Some(user_id) = user_id { %>
+  <h1>Edit User <%= user_id %></h1>
+  <% } else { %>
+  <h1>New User</h1>
+  <% } %>
+
+  <% if let Some(success_message) = success_message { %>
+  <div class="success">
+    <%=success_message%>
+  </div>
+  <% } %>
+
+  <form hx-post="<%= submit_url %>" hx-target="closest div">
+
+    <fieldset>
+      <label for="username">
+        username
+      </label>
+      <input type="text" name="username" value="<%= query_params.username.unwrap_or_default() %>" placeholder="d00d00man543" />
+      <% if let Some(username) = query_params_errors.username{ %>
+      <div class="error"><%= username%></div>
+      <% } %>
+    </fieldset>
+
+    <fieldset>
+      <label for="email">
+        email
+      </label>
+      <input type="text" name="email" value="<%= query_params.email %>" placeholder="dog@god.com" />
+      <% if let Some(email) = query_params_errors.email{ %>
+      <div class="error"><%= email%></div>
+      <% } %>
+    </fieldset>
+
+    <fieldset>
+      <label for="role">
+        role
+      </label>
+      <select name="role" value="<%= user_roles[query_params.user_role_id as usize].0 %>">
+      <% for user_role in user_roles { %>
+        <option value="<%=user_role.0%>"><%=user_role.1%></option>
+      <% } %>
+      </select>
+    </fieldset>
+
+    <fieldset>
+      <label for="active">
+        active
+      </label>
+      <select name="active" value="<%= query_params.active %>">
+        <option value="true">true</option>
+        <option value="false">false</option>
+      </select>
+    </fieldset>
+
+    <input type="submit" value="save" />
+  </form>
+  <button hx-delete="<%= submit_url %>">
+    delete
+  </button>
+</div>
