@@ -23,7 +23,7 @@
     if (typeof htmx !== 'undefined') {
       console.log('htmx is loaded!');
       htmx.on("htmx:afterSwap", function (event) {
-        var title = event.detail.xhr.getResponseHeader("HX-Title");
+        let title = event.detail.xhr.getResponseHeader("HX-Title");
         if (title) {
           document.title = title;
         }
@@ -34,6 +34,37 @@
     }
   </script>
 
+  <script>
+    function initializeWithQuill(cb) {
+      // executes cb after loading quill, if not loaded already
+      if (typeof Quill === 'undefined') {
+        var script = document.createElement('script');
+        script.src = '/public/js/quill.js';
+        script.onload = cb;
+        document.head.appendChild(script);
+      } else {
+        cb();
+      }
+    }
+
+    const QUILL_CONFIGURATION = {};
+
+    function initlializeQuill(editorSelector, editorData, formSelector) {
+      // hydrates quill editor with data/configuration
+      // also attaches quill data to nearest enclosing form as "richText"
+      initializeWithQuill(function () {
+        let editor = new Quill(editorSelector, QUILL_CONFIGURATION);
+        if (editorData) {
+          editor.setContent(editorData);
+        }
+        let form = document.querySelector(formSelector);
+        form.addEventListener('htmx:beforeRequest', function(event) {
+          let formData = event.detail.elt;
+          formData.append('richText', editor.getContent());
+        });
+      });
+    }
+  </script>
 </body>
 
 </html>

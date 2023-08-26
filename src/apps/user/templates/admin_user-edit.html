@@ -37,9 +37,12 @@
       <label for="role">
         role
       </label>
-      <select name="role" value="{{ role.unwrap_or_default() }}">
-        <option value="admin">admin</option>
-        <option value="user">user</option>
+      <select name="role" value="{{ user_roles[user_role_id.unwrap_or(0)] }}">
+      <!--
+      {% for (user_role_id, user_role_name) in user_roles %}
+        <option value="{{user_role_id}}">{{user_role_name}}</option>
+      {% endfor %}
+      -->
       </select>
     </fieldset>
 

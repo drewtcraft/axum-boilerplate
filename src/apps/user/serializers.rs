@@ -24,7 +24,6 @@ pub struct SignUpBody {
 #[derive(Clone, Debug, Deserialize)]
 pub struct SendInviteBody {
     pub email: String,
-    pub role: Option<String>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -37,7 +36,7 @@ pub struct UserEditParams {
     pub username: Option<String>,
     pub email: String,
     pub active: bool,
-    pub role: String,
+    pub role: i32,
 }
 
 pub struct UserEditParamsErrors {
@@ -77,13 +76,6 @@ impl ParamValidator<UserEditParamsErrors> for UserEditParams {
             }
         }
 
-        if !&self.role.is_empty() {
-            if &self.role != "admin" && &self.role != "user" {
-                valid = false;
-                errors.role = Some("role must be either user or admin".to_string());
-            }
-        }
-
         (valid, errors)
     }
 }
@@ -94,7 +86,7 @@ pub struct UserListParams {
     pub username: Option<String>,
     pub email: Option<String>,
     pub active: Option<String>,
-    pub role: Option<String>,
+    pub user_role_id: Option<i32>,
     pub sort_by: Option<String>,
     pub sort_dir: Option<String>,
 }

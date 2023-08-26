@@ -1,0 +1,16 @@
+TODO ("-" to do; "x" done)
+--------------------------
+- think through the data storage for rich text
+	- it is JSON so ideally object storage
+	- BUT it would be nice to attach it to each post in the query
+- think through how to add Quill.js
+	- native script that takes a callback and executes it after it has loaded Quill, if Quill is unloaded
+	- another native script which is used to attach quill data to the enclosing form element
+	- per-template script that calls native method and injects Quill data in the callback to render
+	- per-template script removes itself (self-destruct!)
+
+x rewrite Post model and rename to PostModel
+X rewrite PostModel::create_post query
+	X use query builder to handle if there's no thread_id
+X rewrite create_thread/post handler and template
+X rewrite PostModel::get_posts

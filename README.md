@@ -58,25 +58,82 @@ TODO: add a generator for this sort of thing?
 - open the newly generated migration file and write some SQLite!
 - migrations run automatically on app startup
 
-## Out of the Box
-- A user app
-  - views:
-    - log_in
-    - sign_up
-  - handlers:
-    - log_in
+## Architecture at a glance
+- USER
+  - handlers
+    - get_/post_sign_up
+    - get_/post_log_in
     - log_out
+    - get_/post_send_invite
+    - get_cookie
+    - admin_list_users
+    - admin_get_/admin_post_edit_user
+  - browser templates
+    - log-in
+    - log-out
+    - sign-up
+    - send-invite
+    - admin_user-edit
+    - admin_user-list
+  - email templates
+    - email_invite
+    - email_log-in
   - middleware
-    - require_authentication
+    - restrict_to_user
+    - pull_user_id_from_session_uid
   - models
-    - user model
+    - user_roles
+      - name -- god, admin, contributor, spectator
+    - users
       - username
       - email
+      - role_id FK(user_roles)
       - active
       - created_at
       - updated_at
-    
+    - user_temp_uid_purposes
+      - name -- sign-up, log-in, session
+    - user_temp_uids
+      - uid
+      - expires_at
+      - purpose_id FK(user_temp_uid_purposes)
+      - created_at
+      - user_id
 
+- FORUM
+  - handlers
+  - browser templates
+  - models
+    - file_extensions
+      - extension -- png, jpg, jpeg, gif, svg, webp included
+    - external_files -- db repr of a static file hosted somewhere
+      - url
+      - name
+      - file_extension_id FK(file_extensions)
+    - size_variants
+      - variant_name -- e.g. full_size, thumbnail_64
+    - images
+      - external_file_id FK(external_files)
+      - original_id FK(self)
+      - size_variant_id FK(size_variant)
+      - width
+      - height
+      - user_id
+    - posts
+      - thread_id FK(self) -- unites posts into a thread
+      - parent_id FK(self) -- NULL is top-level post; w/value is comment
+      - title
+      - created_/updated_at -- updated via trigger
+      - user_id
+    - post_images -- 1-post:many-images
+      - post_id
+      - image_id
+      - ordering
+    - post_contents
+      - post_id
+      - plain_text
+      - rich_text -- stores Quill.js Deltas
+      
 # notes on debugging
 
 ## handlers

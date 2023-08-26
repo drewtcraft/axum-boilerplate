@@ -12,7 +12,7 @@ use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 
 use crate::{
-    apps::user::{self, layers::pull_user_id_from_session_uid},
+    apps::{user::{self, layers::pull_user_id_from_session_uid}, forum},
     layers,
     state::AppState,
     error::Result,
@@ -21,6 +21,7 @@ use crate::{
 pub fn get_routes(state: Arc<AppState>) -> Router {
     Router::new()
         .merge(user::routes::get_routes(state.clone()))
+        .merge(forum::routes::get_routes(state.clone()))
         .layer(middleware::map_response(layers::result_mapper))
         .layer(middleware::from_fn(layers::is_htmx))
         .layer(middleware::from_fn_with_state(

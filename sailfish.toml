@@ -1,0 +1,1 @@
+template_dirs = ["src/templates", "src/apps/user/templates", "src/apps/forum/templates"]

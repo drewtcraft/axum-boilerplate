@@ -19,16 +19,17 @@ use crate::error::{Error, Result};
 use crate::mailer::send_email;
 use crate::state::AppState;
 use crate::traits::{ParamValidator, ToPlainText};
-use crate::utils::{get_own_url_with, self};
+use crate::utils::{self, get_own_url_with};
 
 use super::constants::SESSION_UID_COOKIE;
+use super::models;
 use super::models::{User, UserTempUid, UserTempUid::TempUidPurpose};
 use super::serializers::{
     IdParam, LogInBody, SendInviteBody, SignUpBody, UidParam, UserEditParams, UserListParams,
 };
 use super::templates::{
-    AdminUserEditTemplate, AdminUserListTemplate, EmailInviteTemplate, LogInTemplate,
-    SignUpTemplate, UserListUser,
+    /*AdminUserEditTemplate,*/ /*AdminUserListTemplate,*/ EmailInviteTemplate, LogInTemplate,
+    SignUpTemplate, /*UserListUser,*/
 };
 
 pub async fn get_sign_up(
@@ -74,7 +75,7 @@ pub async fn post_sign_up(
             Some(&payload.username),
             Some("username taken"),
         )?;
-        return Ok((Html(html)).into_response());
+        return Ok(Html(html).into_response());
     }
 
     // verify email is not taken
@@ -196,9 +197,6 @@ pub async fn post_send_invite(
     Form(payload): Form<SendInviteBody>,
 ) -> Result<impl IntoResponse> {
     let email = payload.email;
-    let role = payload
-        .role
-        .unwrap_or(User::UserRole::user.as_ref().to_string());
 
     // verify email is not taken
     if User::email_exists(&state.db_pool, &email).await? {
@@ -206,14 +204,7 @@ pub async fn post_send_invite(
     }
 
     // create new stub user
-    let user_id = User::create_user(
-        &state.db_pool,
-        None,
-        &email,
-        false,
-        User::UserRole::from_str(&role).unwrap(),
-    )
-    .await?;
+    let user_id = User::create_user(&state.db_pool, None, &email, false, 0).await?;
 
     let uid = UserTempUid::create_user_sign_up_temp_uid(&state.db_pool, user_id).await?;
 
@@ -268,144 +259,119 @@ pub async fn get_cookie(
     Ok(Redirect::to("/"))
 }
 
-pub async fn list_users(
-    State(state): State<Arc<AppState>>,
-    Extension(context): Extension<Context>,
-    Query(query_params): Query<UserListParams>,
-) -> Result<impl IntoResponse> {
-    info!("admin list_users hit");
-    let (valid, errors) = query_params.validate();
-    if !valid {
-        info!("admin list_users invalid params");
-        let rendered_user_list = AdminUserListTemplate::new_render_error(
-            query_params
-                .user_id
-                .as_ref()
-                .map(|s| s.to_string())
-                .as_ref()
-                .map(|s| s.as_str()),
-            errors.user_id.as_ref().map(|s| s.as_str()),
-            query_params.username.as_ref().map(|s| s.as_str()),
-            errors.username.as_ref().map(|s| s.as_str()),
-            query_params.active.as_ref().map(|s| s.as_str()),
-            query_params.email.as_ref().map(|s| s.as_str()),
-            errors.email.as_ref().map(|s| s.as_str()),
-            query_params.role.as_ref().map(|s| s.as_str()),
-            query_params.sort_by.as_ref().map(|s| s.as_str()),
-            query_params.sort_dir.as_ref().map(|s| s.as_str()),
-        )?;
+// pub async fn list_users(
+//     State(state): State<Arc<AppState>>,
+//     Extension(context): Extension<Context>,
+//     Query(query_params): Query<UserListParams>,
+// ) -> Result<impl IntoResponse> {
+//     info!("admin list_users hit");
+//     let (valid, errors) = query_params.validate();
+//     let user_roles = models::UserRole::list_user_roles(&state.db_pool).await?;
+//     if !valid {
+//         info!("admin list_users invalid params");
+//         let rendered_user_list =
+//             AdminUserListTemplate::new_render_error(user_roles, query_params, errors)?;
 
-        let html = utils
-::render_template(context.is_htmx, rendered_user_list)?;
-        return Ok((StatusCode::OK, Html(html)));
-    }
+//         let html = utils::render_template(context.is_htmx, rendered_user_list)?;
+//         return Ok((StatusCode::OK, Html(html)));
+//     }
 
-    let users = User::list_users(&state.db_pool, &query_params).await?;
-    info!("admin list_users found some users");
+//     let users = User::list_users(&state.db_pool, &query_params).await?;
+//     info!("admin list_users found some users");
 
-    let formatted_users: Vec<UserListUser> = users
-        .iter()
-        .map(|user| UserListUser {
-            id: user.id,
-            username: user.username.as_ref().map(|s| s.as_str()),
-            email: &user.email,
-            active: user.active,
-            role: &user.role,
-            created_at: &user.created_at,
-            updated_at: &user.updated_at,
-        })
-        .collect();
+//     let formatted_users: Vec<UserListUser> = users
+//         .iter()
+//         .map(|user| UserListUser {
+//             id: user.id,
+//             username: user.username.clone(),
+//             email: user.email.clone(),
+//             active: user.active,
+//             user_role_id: user.user_role_id as usize,
+//             created_at: user.created_at.clone(),
+//             updated_at: user.updated_at.clone(),
+//         })
+//         .collect();
 
-    let users_list = if formatted_users.is_empty() {
-        info!("did not find any users");
-        None
-    } else {
-        info!("found {} users", &formatted_users.len());
-        Some(formatted_users)
-    };
+//     let users_list = if formatted_users.is_empty() {
+//         None
+//     } else {
+//         Some(formatted_users)
+//     };
 
-    let rendered_user_list = AdminUserListTemplate::new_render(
-        users_list,
-        query_params
-            .user_id
-            .as_ref()
-            .map(|s| s.to_string())
-            .as_ref()
-            .map(|s| s.as_str()),
-        query_params.username.as_ref().map(|s| s.as_str()),
-        query_params.active.as_ref().map(|s| s.as_str()),
-        query_params.email.as_ref().map(|s| s.as_str()),
-        query_params.role.as_ref().map(|s| s.as_str()),
-        query_params.sort_by.as_ref().map(|s| s.as_str()),
-        query_params.sort_dir.as_ref().map(|s| s.as_str()),
-    )?;
+//     let rendered_user_list =
+//         AdminUserListTemplate::new_render(users_list, user_roles, query_params)?;
 
-    let html = utils::render_template(context.is_htmx, rendered_user_list)?;
-    Ok((StatusCode::OK, Html(html)))
-}
+//     let html = utils::render_template(context.is_htmx, rendered_user_list)?;
 
-pub async fn admin_get_edit_user(
-    State(state): State<Arc<AppState>>,
-    Extension(context): Extension<Context>,
-    Path(params): Path<IdParam>,
-) -> Result<impl IntoResponse> {
-    let user = User::get_user(&state.db_pool, params.id).await?;
-    // TODO there should be a more ergonomic way to do this
-    let user_id_str = user.id.to_string();
-    let submit_url = format!("/admin/users/{}", user.id);
-    let rendered_user_edit = AdminUserEditTemplate::new_render_existing(
-        &user_id_str,
-        user.username.as_ref().map(|s| s.as_str()),
-        user.email.as_str(),
-        user.active,
-        user.role.as_str(),
-        &submit_url.as_str(),
-        None,
-    )?;
-    let html = utils::render_template(context.is_htmx, rendered_user_edit)?;
-    Ok(Html(html))
-}
+//     Ok((StatusCode::OK, Html(html)))
+// }
 
-pub async fn admin_post_edit_user(
-    State(state): State<Arc<AppState>>,
-    Extension(context): Extension<Context>,
-    Path(params): Path<IdParam>,
-    Form(payload): Form<UserEditParams>, // may need to be Json
-) -> Result<impl IntoResponse> {
-    let (valid, errors) = payload.validate();
-    let user_id_str = params.id.to_string();
-    let submit_url = format!("/admin/users/{}", params.id);
-    if !valid {
-        let rendered_user_edit = AdminUserEditTemplate::new_render_error(
-            Some(user_id_str.as_str()),
-            payload.username.as_ref().map(|s| s.as_ref()),
-            errors.username.as_ref().map(|s| s.as_ref()),
-            Some(payload.email.as_str()),
-            errors.email.as_ref().map(|s| s.as_ref()),
-            Some(payload.active),
-            Some(payload.role.as_str()),
-            submit_url.as_str(),
-        )?;
-        let html = utils
-::render_template(context.is_htmx, rendered_user_edit)?;
-        return Ok(Html(html));
-    }
+// pub async fn admin_get_edit_user(
+//     State(state): State<Arc<AppState>>,
+//     Extension(context): Extension<Context>,
+//     Path(params): Path<IdParam>,
+// ) -> Result<impl IntoResponse> {
+//     let user = User::get_user(&state.db_pool, params.id).await?;
+//     // TODO there should be a more ergonomic way to do this
+//     let user_id_str = user.id.to_string();
+//     let submit_url = format!("/admin/users/{}", user.id);
+//     let user_roles = models::UserRole::list_user_roles(&state.db_pool).await?;
+//     let rendered_user_edit = AdminUserEditTemplate::new_render_existing(
+//         user_roles,
+//         &user_id_str,
+//         user.username.as_ref().map(|s| s.as_str()),
+//         user.email.as_str(),
+//         user.active,
+//         user.user_role_id as usize,
+//         &submit_url.as_str(),
+//         None,
+//     )?;
+//     let html = utils::render_template(context.is_htmx, rendered_user_edit)?;
+//     Ok(Html(html))
+// }
 
-    // edit user
-    let edited_user = User::edit_user(&state.db_pool, params.id, &payload).await?;
-    // render template with new user & send
-    let success_message = format!("successfully updated user at {}", &edited_user.updated_at);
-    // let success_message = String::from("honk");
-    let rendered_user_edit = AdminUserEditTemplate::new_render_existing(
-        &user_id_str,
-        payload.username.as_ref().map(|s| s.as_str()),
-        &payload.email,
-        payload.active,
-        &payload.role,
-        submit_url.as_str(),
-        Some(success_message.as_str()),
-    )?;
-    let html = utils::render_template(context.is_htmx, rendered_user_edit)?;
+// pub async fn admin_post_edit_user(
+//     State(state): State<Arc<AppState>>,
+//     Extension(context): Extension<Context>,
+//     Path(params): Path<IdParam>,
+//     Form(payload): Form<UserEditParams>, // may need to be Json
+// ) -> Result<impl IntoResponse> {
+//     let (valid, errors) = payload.validate();
+//     let user_id_str = params.id.to_string();
+//     let submit_url = format!("/admin/users/{}", params.id);
+//     let user_roles = models::UserRole::list_user_roles(&state.db_pool).await?;
+//     if !valid {
+//         let rendered_user_edit = AdminUserEditTemplate::new_render_error(
+//             user_roles,
+//             Some(user_id_str.as_str()),
+//             payload.username.as_ref().map(|s| s.as_ref()),
+//             errors.username.as_ref().map(|s| s.as_ref()),
+//             Some(payload.email.as_str()),
+//             errors.email.as_ref().map(|s| s.as_ref()),
+//             Some(payload.active),
+//             Some(&(payload.role as usize)),
+//             submit_url.as_str(),
+//         )?;
+//         let html = utils::render_template(context.is_htmx, rendered_user_edit)?;
+//         return Ok(Html(html));
+//     }
 
-    Ok(Html(html))
-}
+//     // edit user
+//     let edited_user = User::edit_user(&state.db_pool, params.id, &payload).await?;
+//     // render template with new user & send
+//     let success_message = format!("successfully updated user at {}", &edited_user.updated_at);
+//     // let success_message = String::from("honk");
+//     let rendered_user_edit = AdminUserEditTemplate::new_render_existing(
+//         user_roles,
+//         &user_id_str,
+//         payload.username.as_ref().map(|s| s.as_str()),
+//         &payload.email,
+//         payload.active,
+//         payload.role as usize,
+//         submit_url.as_str(),
+//         Some(success_message.as_str()),
+//     )?;
+//     let html = utils::render_template(context.is_htmx, rendered_user_edit)?;
+
+//     Ok(Html(html))
+// }

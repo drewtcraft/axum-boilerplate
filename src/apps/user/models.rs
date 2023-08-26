@@ -1,4 +1,44 @@
 #[allow(non_snake_case)]
+pub mod UserRole {
+    use sqlx::SqlitePool;
+    use crate::error::{Result, Error};
+
+    pub async fn list_user_roles(db_pool: &SqlitePool) -> Result<Vec<(i32, String)>> {
+        sqlx::query_as::<_, (i32, String)>(
+            "
+                SELECT 
+                    id, 
+                    name 
+                FROM user_roles;
+            ",
+        )
+        .fetch_all(db_pool)
+        .await
+        .map(|v| v)
+        .map_err(|e| Error::DatabaseFailure)
+    }
+
+    pub async fn get_user_role_id_by_name(db_pool: &SqlitePool, name: &str) -> Result<i32> {
+        
+        sqlx::query_as::<_, (i32,)>(
+            "
+                SELECT id
+                FROM user_roles
+                WHERE name = ?
+            ",
+        )
+        .bind(name)
+        .fetch_one(db_pool)
+        .await
+        .map(|v| v.0)
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => Error::DatabaseRecordNotFound,
+            _ => Error::DatabaseFailure,
+        })
+    }
+}
+
+#[allow(non_snake_case)]
 pub mod User {
     use crate::apps::user::serializers::{UserEditParams, UserListParams};
     use crate::{
@@ -6,19 +46,10 @@ pub mod User {
         utils::DateTime8601String,
     };
     use log::{info, warn};
-    use serde::Deserialize;
     use sqlx::{
          FromRow, QueryBuilder, SqlitePool, 
     };
-    use strum_macros::{AsRefStr, EnumString};
 
-    // TODO use rust names like "Admin" and figure out some decoration for deserializing from client
-    #[derive(Debug, Clone, AsRefStr, Deserialize, EnumString)]
-    #[allow(non_camel_case_types)]
-    pub enum UserRole {
-        admin,
-        user,
-    }
 
     #[derive(Debug, Clone, FromRow)]
     pub struct User {
@@ -26,7 +57,7 @@ pub mod User {
         pub username: Option<String>,
         pub email: String,
         pub active: bool,
-        pub role: String,
+        pub user_role_id: i32,
         pub created_at: String, // would be nice to get this as datetime from sqlx
         pub updated_at: String,
     }
@@ -50,9 +81,9 @@ pub mod User {
         query
             .push(", email =")
             .push_bind(&user_params.email)
-            .push(", role =")
+            .push(", user_role_id = (SELECT id FROM user_roles WHERE name =")
             .push_bind(&user_params.role)
-            .push(", active =")
+            .push("), active =")
             .push_bind(&user_params.active)
             .push(" WHERE id =")
             .push_bind(&user_id)
@@ -109,25 +140,24 @@ pub mod User {
         }
 
         if let Some(active) = &query_params.active {
-            if active != "any" {
-                let active_q = if active == "active" { "TRUE" } else { "FALSE" };
+            if *active != "any" {
+                let active_q = if *active == "active" { "TRUE" } else { "FALSE" };
                 query.push(build_query_condition(is_first_condition, "active = "));
                 query.push_bind(format!("%{}%", active_q));
                 is_first_condition = false;
             }
         }
 
-        if let Some(role) = &query_params.role {
-            if role != "any" {
-                query.push(build_query_condition(is_first_condition, "role = "));
-                query.push_bind(format!("%{}%", role));
-                is_first_condition = false;
+        if let Some(role) = &query_params.user_role_id {
+            if *role != -1i32 {
+                query.push(build_query_condition(is_first_condition, "user_role_id = "));
+                query.push_bind(format!("{}", role));
             }
         }
 
         if let Some(sort_by) = &query_params.sort_by {
             let sort_by_is_valid =
-                !sort_by.is_empty() && (sort_by == "username" || sort_by == "email");
+                !sort_by.is_empty() && (*sort_by == "username" || *sort_by == "email");
             if sort_by_is_valid {
                 if let Some(sort_dir) = &query_params.sort_dir {
                     let sort_dir_is_valid = !sort_dir.is_empty()
@@ -160,22 +190,22 @@ pub mod User {
         username: Option<&str>,
         email: &str,
         active: bool,
-        role: UserRole,
+        role: i32,
     ) -> Result<i64> {
         let datetime = DateTime8601String::now();
 
         let mut query = QueryBuilder::new("INSERT INTO users (");
-        query.push("email, active, role, created_at, updated_at");
+        query.push("email, active, user_role_id, created_at, updated_at");
         if username.is_some() {
             query.push(", username ");
         }
 
-        query.push(" VALUES( ");
+        query.push(") VALUES(");
         query.push_bind(email);
         query.push(", ");
         query.push_bind(active);
         query.push(", ");
-        query.push_bind(role.as_ref());
+        query.push_bind(role);
         query.push(", ");
         query.push_bind(&datetime);
         query.push(", ");
@@ -184,8 +214,9 @@ pub mod User {
         if let Some(username) = username {
             query.push(", ");
             query.push_bind(username.clone());
+            info!("{}", username.clone());
         }
-        query.push(" ) RETURNING id;");
+        query.push(") RETURNING id;");
 
         query
             .build_query_as::<(i64,)>()
@@ -193,6 +224,7 @@ pub mod User {
             .await
             .map(|r| r.0)
             .map_err(|e| {
+                info!("{:?}", e);
                 if let sqlx::Error::Database(err) = e {
                     if err.code().unwrap_or_default() == "2067" {
                         return Error::DatabaseRecordAlreadyExists;

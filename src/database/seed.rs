@@ -7,12 +7,13 @@ pub async fn run(db_pool: &SqlitePool) {
 }
 
 pub async fn seed_admin_user(db_pool: &SqlitePool, username: &str, email: &str) {
+    let god_user_role_id = models::UserRole::get_user_role_id_by_name(&db_pool, "god").await;
     let user_id = models::User::create_user(
         &db_pool,
         Some(username),
         email,
         true,
-        models::User::UserRole::admin,
+        1
     )
     .await;
 

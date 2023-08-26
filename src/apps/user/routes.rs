@@ -8,18 +8,18 @@ use crate::context::Context;
 use crate::state::AppState;
 
 use super::handlers::{
-    admin_get_edit_user, admin_post_edit_user, get_cookie, get_log_in, get_send_invite,
-    get_sign_up, list_users, log_out, post_log_in, post_send_invite, post_sign_up,
+    /* admin_get_edit_user, admin_post_edit_user,*/ get_cookie, get_log_in, get_send_invite,
+    get_sign_up, /* list_users, */ log_out, post_log_in, post_send_invite, post_sign_up,
 };
 use super::layers::{pull_user_id_from_session_uid, restrict_to_user};
 
 pub fn get_routes(state: Arc<AppState>) -> Router {
     let private_routes = Router::new()
-        .route("/admin/users", get(list_users))
-        .route(
-            "/admin/users/:id",
-            get(admin_get_edit_user).post(admin_post_edit_user),
-        )
+        // .route("/admin/users", get(list_users))
+        // .route(
+        //     "/admin/users/:id",
+        //     get(admin_get_edit_user).post(admin_post_edit_user),
+        // )
         .route("/log-out", get(log_out))
         .route("/send-invite", get(get_send_invite).post(post_send_invite))
         .layer(middleware::from_fn(restrict_to_user))

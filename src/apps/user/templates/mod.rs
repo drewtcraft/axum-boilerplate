@@ -1,6 +1,23 @@
 use crate::error::{Error, Result};
 use crate::traits::ToPlainText;
 use askama::Template;
+use super::serializers::{UserListParams, UserListParamsErrors};
+use sailfish::TemplateOnce;
+
+
+#[derive(TemplateOnce)]
+#[template(path = "log-in.stpl")]
+pub struct SFLogInTemplate {
+    pub input_error: Option<String>,
+}
+
+impl SFLogInTemplate {
+    pub fn new_render() -> Result<String> {
+        Self { input_error: None }
+            .render_once()
+            .map_err(|_| Error::TemplateRenderingFailure)
+    }
+}
 
 // --------------
 // USER TEMPLATES
@@ -133,180 +150,178 @@ impl ToPlainText for EmailLogInTemplate {
 // ADMIN TEMPLATES
 // ---------------
 
-pub type FieldError<'a> = Option<&'a str>;
+// pub type FieldError<'a> = Option<&'a str>;
 
-pub struct UserListUser<'a> {
-    pub id: i64,
-    pub username: Option<&'a str>,
-    pub email: &'a str,
-    pub active: bool,
-    pub role: &'a str,
-    pub created_at: &'a str,
-    pub updated_at: &'a str,
-}
+// pub struct UserListUser<'a> {
+//     pub id: i64,
+//     pub username: Option<&'a str>,
+//     pub email: &'a str,
+//     pub active: bool,
+//     pub user_role_id: usize,
+//     pub created_at: &'a str,
+//     pub updated_at: &'a str,
+// }
 
-#[derive(Template)]
-#[template(path = "admin_user-list.html")]
-pub struct AdminUserListTemplate<'a> {
-    pub users_list: Option<Vec<UserListUser<'a>>>,
+// #[derive(Template)]
+// #[template(path = "admin_user-list.html")]
+// pub struct AdminUserListTemplate<'a> {
+//     pub users_list: Option<Vec<UserListUser<'a>>>,
 
-    pub user_id_input: Option<&'a str>,
-    pub user_id_input_error: FieldError<'a>,
+//     pub user_roles: Vec<(i32, String)>,
 
-    pub username_input: Option<&'a str>,
-    pub username_input_error: FieldError<'a>,
+//     pub user_id_input: Option<String>,
+//     pub user_id_input_error: FieldError<'a>,
 
-    pub active_input: Option<&'a str>,
+//     pub username_input: Option<String>,
+//     pub username_input_error: FieldError<'a>,
 
-    pub email_input: Option<&'a str>,
-    pub email_input_error: FieldError<'a>,
+//     pub active_input: Option<String>,
 
-    pub role_input: Option<&'a str>,
+//     pub email_input: Option<String>,
+//     pub email_input_error: FieldError<'a>,
 
-    pub sort_by: Option<&'a str>,  // username, email
-    pub sort_dir: Option<&'a str>, // ASC, DESC
-}
+//     pub user_role_id_input: usize,
 
-impl<'a> AdminUserListTemplate<'a> {
-    pub fn new_render(
-        users_list: Option<Vec<UserListUser<'a>>>,
-        user_id_input: Option<&'a str>,
-        username_input: Option<&'a str>,
-        active_input: Option<&'a str>,
-        email_input: Option<&'a str>,
-        role_input: Option<&'a str>,
-        sort_by: Option<&'a str>,
-        sort_dir: Option<&'a str>,
-    ) -> Result<String> {
-        Self {
-            users_list,
-            user_id_input,
-            user_id_input_error: None,
-            username_input,
-            username_input_error: None,
-            active_input,
-            email_input,
-            email_input_error: None,
-            role_input,
-            sort_by,
-            sort_dir,
-        }
-        .render()
-        .map_err(|_| Error::TemplateRenderingFailure)
-    }
+//     pub sort_by: Option<String>,  // username, email
+//     pub sort_dir: Option<String>, // ASC, DESC
+// }
 
-    pub fn new_render_error(
-        user_id_input: Option<&'a str>,
-        user_id_input_error: FieldError<'a>,
-        username_input: Option<&'a str>,
-        username_input_error: FieldError<'a>,
-        active_input: Option<&'a str>,
-        email_input: Option<&'a str>,
-        email_input_error: FieldError<'a>,
-        role_input: Option<&'a str>,
-        sort_by: Option<&'a str>,
-        sort_dir: Option<&'a str>,
-    ) -> Result<String> {
-        Self {
-            users_list: None,
-            user_id_input,
-            user_id_input_error,
-            username_input,
-            username_input_error,
-            active_input,
-            email_input,
-            email_input_error,
-            role_input,
-            sort_by,
-            sort_dir,
-        }
-        .render()
-        .map_err(|_| Error::TemplateRenderingFailure)
-    }
-}
+// impl AdminUserListTemplate<'a> {
+//     pub fn new_render(
+//         users_list: Option<Vec<UserListUser<'a>>>,
+//         user_roles: Vec<(i32, String)>,
+//         query_params: UserListParams,
+//     ) -> Result<String> {
+//         Self {
+//             users_list,
+//             user_roles,
+//             user_id_input: query_params.user_id.as_ref().map(|s| s.as_str()),
+//             user_id_input_error: None,
+//             username_input: query_params.username.as_ref().map(|s| s.as_str()),
+//             username_input_error: None,
+//             active_input: query_params.active.as_ref().map(|s| s.as_str()),
+//             email_input: query_params.email.as_ref().map(|s| s.as_str()),
+//             email_input_error: None,
+//             user_role_id_input: query_params.user_role_id.unwrap_or(0) as usize,
+//             sort_by: query_params.sort_by.as_ref().map(|s| s.as_str()),
+//             sort_dir: query_params.sort_dir.as_ref().map(|s| s.as_str()),
+//         }
+//         .render()
+//         .map_err(|_| Error::TemplateRenderingFailure)
+//     }
 
-#[derive(Template)]
-#[template(path = "admin_user-edit.html")]
-pub struct AdminUserEditTemplate<'a> {
-    pub user_id: Option<&'a str>,
+//     pub fn new_render_error(
+//         user_roles: Vec<(i32, String)>,
+//         query_params: UserListParams,
+//         query_params_errors: UserListParamsErrors,
+//     ) -> Result<String> {
+//         Self {
+//             users_list: None,
+//             user_roles,
+//             user_id_input: query_params.user_id.as_ref().map(|s| s.as_str()),
+//             user_id_input_error: query_params_errors.user_id.as_ref().map(|s| s.as_str()),
+//             username_input: query_params.username.as_ref().map(|s| s.as_str()),
+//             username_input_error: query_params_errors.username.as_ref().map(|s| s.as_str()),
+//             active_input: query_params.active.as_ref().map(|s| s.as_str()),
+//             email_input: query_params.email.as_ref().map(|s| s.as_str()),
+//             email_input_error: query_params_errors.email.as_ref().map(|s| s.as_str()),
+//             user_role_id_input: query_params.user_role_id.unwrap_or(0) as usize,
+//             sort_by: query_params.sort_by.as_ref().map(|s| s.as_str()),
+//             sort_dir: query_params.sort_dir.as_ref().map(|s| s.as_str()),
+//         }
+//         .render()
+//         .map_err(|_| Error::TemplateRenderingFailure)
+//     }
+// }
 
-    pub username: Option<&'a str>,
-    pub username_input_error: FieldError<'a>,
+// #[derive(Template)]
+// #[template(path = "admin_user-edit.html")]
+// pub struct AdminUserEditTemplate<'a> {
+//     pub user_id: Option<&'a str>,
 
-    pub email: Option<&'a str>,
-    pub email_input_error: FieldError<'a>,
+//     pub username: Option<&'a str>,
+//     pub username_input_error: FieldError<'a>,
 
-    pub active: Option<bool>,
+//     pub email: Option<&'a str>,
+//     pub email_input_error: FieldError<'a>,
 
-    pub role: Option<&'a str>,
+//     pub active: Option<bool>,
 
-    pub success_message: Option<&'a str>,
-    pub submit_url: &'a str,
-}
+//     pub user_role_id: usize,
 
-impl<'a> AdminUserEditTemplate<'a> {
-    pub fn new_render_error(
-        user_id: Option<&'a str>,
-        username: Option<&'a str>,
-        username_input_error: FieldError<'a>,
-        email: Option<&'a str>,
-        email_input_error: FieldError<'a>,
-        active: Option<bool>,
-        role: Option<&'a str>,
-        submit_url: &'a str,
-    ) -> Result<String> {
-        Self {
-            user_id,
-            username,
-            username_input_error,
-            email,
-            email_input_error,
-            active,
-            role,
-            submit_url,
-            success_message: None,
-        }
-        .render()
-        .map_err(|_| Error::TemplateRenderingFailure)
-    }
+//     pub success_message: Option<&'a str>,
+//     pub submit_url: &'a str,
+//     pub user_roles: Vec<(i32, String)>,
+// }
 
-    pub fn new_render_existing(
-        user_id: &'a String,
-        username: Option<&'a str>,
-        email: &'a str,
-        active: bool,
-        role: &'a str,
-        submit_url: &'a str,
-        success_message: Option<&'a str>,
-    ) -> Result<String> {
-        Self {
-            user_id: Some(user_id.as_str()),
-            username,
-            username_input_error: None,
-            email: Some(email),
-            email_input_error: None,
-            active: Some(active),
-            role: Some(role),
-            submit_url,
-            success_message,
-        }
-        .render()
-        .map_err(|_| Error::TemplateRenderingFailure)
-    }
+// impl<'a> AdminUserEditTemplate<'a> {
+//     pub fn new_render_error(
+//         user_roles: Vec<(i32, String)>,
+//         user_id: Option<&'a str>,
+//         username: Option<&'a str>,
+//         username_input_error: FieldError<'a>,
+//         email: Option<&'a str>,
+//         email_input_error: FieldError<'a>,
+//         active: Option<bool>,
+//         user_role_id: Option<usize>,
+//         submit_url: &'a str,
+//     ) -> Result<String> {
+//         Self {
+//             user_roles,
+//             user_id,
+//             username,
+//             username_input_error,
+//             email,
+//             email_input_error,
+//             active,
+//             user_role_id,
+//             submit_url,
+//             success_message: None,
+//         }
+//         .render()
+//         .map_err(|_| Error::TemplateRenderingFailure)
+//     }
 
-    pub fn new_render_blank(submit_url: &'a str) -> Result<String> {
-        Self {
-            user_id: None,
-            username: None,
-            username_input_error: None,
-            email: None,
-            email_input_error: None,
-            active: None,
-            role: None,
-            submit_url,
-            success_message: None,
-        }
-        .render()
-        .map_err(|_| Error::TemplateRenderingFailure)
-    }
-}
+//     pub fn new_render_existing(
+//         user_roles: Vec<(i32, String)>,
+//         user_id: &'a String,
+//         username: Option<&'a str>,
+//         email: &'a str,
+//         active: bool,
+//         user_role_id: usize,
+//         submit_url: &'a str,
+//         success_message: Option<&'a str>,
+//     ) -> Result<String> {
+//         Self {
+//             user_roles,
+//             user_id: Some(user_id.as_str()),
+//             username,
+//             username_input_error: None,
+//             email: Some(email),
+//             email_input_error: None,
+//             active: Some(active),
+//             user_role_id: Some(&user_role_id),
+//             submit_url,
+//             success_message,
+//         }
+//         .render()
+//         .map_err(|_| Error::TemplateRenderingFailure)
+//     }
+
+//     pub fn new_render_blank(submit_url: &'a str, user_roles: Vec<(i32, String)>) -> Result<String> {
+//         Self {
+//             user_roles,
+//             user_id: None,
+//             username: None,
+//             username_input_error: None,
+//             email: None,
+//             email_input_error: None,
+//             active: None,
+//             user_role_id: None,
+//             submit_url,
+//             success_message: None,
+//         }
+//         .render()
+//         .map_err(|_| Error::TemplateRenderingFailure)
+//     }
+// }
