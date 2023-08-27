@@ -37,28 +37,41 @@ pub struct SignUpTemplate {
 }
 
 impl SignUpTemplate {
-    pub fn new_render(attached_email: String) -> Result<String> {
-        Self {
+    pub fn new_render(is_htmx: bool, attached_email: String) -> Result<String> {
+        let rendered = Self {
             attached_email,
             username: None,
             username_input_error: None,
         }
         .render_once()
-        .map_err(|_| Error::TemplateRenderingFailure)
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 
     pub fn new_render_error(
+        is_htmx: bool,
         attached_email: String,
         username: Option<String>,
         username_input_error: Option<String>,
     ) -> Result<String> {
-        Self {
+        let rendered = Self {
             attached_email,
             username,
             username_input_error,
         }
         .render_once()
-        .map_err(|_| Error::TemplateRenderingFailure)
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+        
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 }
 

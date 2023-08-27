@@ -46,16 +46,14 @@ pub async fn get_sign_up(
 
     info!("Got email from get_sign_up uid lookup: {}", email);
 
-    let rendered_sign_up = SignUpTemplate::new_render(email)?;
-
+    let rendered = SignUpTemplate::new_render(context.get_is_htmx(), email)?;
     context.page_title = Some(String::from("donkey"));
 
-    let html = utils::render_template(Some(false), rendered_sign_up)?;
-
-    Ok(Html(html))
+    Ok(Html(rendered))
 }
 
 pub async fn post_sign_up(
+    Extension(mut context): Extension<Context>,
     cookies: Cookies,
     Path(params): Path<UidParam>,
     State(state): State<Arc<AppState>>,
@@ -72,6 +70,7 @@ pub async fn post_sign_up(
             &payload.username
         );
         let html = SignUpTemplate::new_render_error(
+            context.get_is_htmx(),
             payload.email,
             Some(payload.username),
             Some("username taken".to_string()),
