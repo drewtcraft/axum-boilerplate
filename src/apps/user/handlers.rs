@@ -163,7 +163,7 @@ pub async fn log_out(
     Extension(context): Extension<Context>,
 ) -> Result<impl IntoResponse> {
     info!("hit log_out");
-    if let Some(user_data) = context.user_data {
+    if let Some(user_data) = &context.user_data {
         info!("deleting user session on log_out");
         UserTempUid::delete_user_temp_uid(&state.db_pool, &user_data.session_uid).await?;
     }
@@ -172,8 +172,7 @@ pub async fn log_out(
     cookie.set_max_age(Duration::seconds(0));
     cookies.add(cookie);
 
-    let rendered_logout = LogOutTemplate::new_render()?;
-    let rendered = utils::render_template(context.is_htmx, rendered_logout)?;
+    let rendered = LogOutTemplate::new_render(context.get_is_htmx())?;
 
     Ok((StatusCode::OK, Html(rendered)))
 }

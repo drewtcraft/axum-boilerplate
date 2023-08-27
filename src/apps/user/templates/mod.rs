@@ -113,9 +113,15 @@ impl SendInviteTemplate {
 pub struct LogOutTemplate;
 
 impl LogOutTemplate {
-    pub fn new_render() -> Result<String> {
-        Self.render_once()
-            .map_err(|_| Error::TemplateRenderingFailure)
+    pub fn new_render(is_htmx: bool) -> Result<String> {
+        let rendered = Self.render_once()
+            .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 }
 
