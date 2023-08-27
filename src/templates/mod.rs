@@ -11,7 +11,7 @@ impl BaseTemplate {
     pub fn new_render(content: String) -> Result<String> {
         Self { content }
             .render_once()
-            .map_err(|e| Error::TemplateRenderingFailure)
+            .map_err(|_| Error::TemplateRenderingFailure)
     }
 }
 
@@ -23,9 +23,16 @@ pub struct ErrorTemplate {
 }
 
 impl ErrorTemplate {
-    pub fn new(error_message: String, status_code: String) -> String {
-        Self { error_message, status_code }
+    pub fn new(is_htmx: bool, error_message: String, status_code: String) -> String {
+        let rendered = Self { error_message, status_code }
             .render_once()
-            .unwrap_or("Error template failure.".to_string())
+            .unwrap_or("Error template failure.".to_string());
+
+        if is_htmx {
+            rendered
+        } else {
+            BaseTemplate::new_render(rendered)
+                .unwrap_or("Error template failure.".to_string())
+        }
     }
 }

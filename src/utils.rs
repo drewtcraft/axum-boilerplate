@@ -1,12 +1,6 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
-use log::info;
-use sailfish::TemplateOnce;
 
-use crate::{
-    constants::BASE_URL,
-    error::{Error, Result},
-    templates::BaseTemplate,
-};
+use crate::constants::BASE_URL;
 
 pub struct DateTime8601String;
 
@@ -48,27 +42,6 @@ impl DateTime8601String {
             true
         }
     }
-}
-
-pub fn render_template(is_htmx: Option<bool>, partial: String) -> Result<String> {
-    // should only really be needed on GET requests that could be
-    // full page or a partial
-    if let Some(is_htmx) = is_htmx {
-        if !is_htmx {
-            render_base_with_partial(partial)
-        } else {
-            Ok(partial)
-        }
-    } else {
-        render_base_with_partial(partial)
-    }
-}
-
-pub fn render_base_with_partial(partial: String) -> Result<String> {
-    info!("rendering non-htmx FULL PAGE request");
-    BaseTemplate { content: partial }
-        .render_once()
-        .map_err(|_| Error::TemplateRenderingFailure)
 }
 
 pub fn get_own_url_with(append: &str) -> String {

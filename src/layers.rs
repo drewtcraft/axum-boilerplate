@@ -45,14 +45,13 @@ pub async fn result_mapper(res: Response) -> Response {
         .map(|server_error| {
             let (status_code, client_error) = server_error.status_and_client_error();
             let status_code_str = status_code.to_string();
-            let rendered_error = ErrorTemplate::new(client_error.as_ref().to_string(), status_code_str);
-            let html = if let Some(context) = context {
-                utils::render_template(context.is_htmx, rendered_error.clone())
-                    .unwrap_or(rendered_error)
+            let is_htmx = if context.is_some() {
+                context.unwrap().get_is_htmx()
             } else {
-                rendered_error
+                false
             };
-            (status_code, Html(html)).into_response()
+            let rendered= ErrorTemplate::new(is_htmx, client_error.as_ref().to_string(), status_code_str);
+            (status_code, Html(rendered)).into_response()
         })
         .unwrap_or(res)
 }
