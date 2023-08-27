@@ -6,8 +6,6 @@
   <meta name="description" content="A website for visual artists to collaborate by playing games similar to \" Exquisite
     Corpse\"">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta property="og:title" content="{% block og_title %}{% endblock og_title %}" />
-  <meta property="og:image" content="{% block og_image %}{% endblock og_image %}" />
   <title>{% block title %}XQZT CRPS{% endblock title %}</title>
   <link rel="stylesheet" href="/public/css/unpoly.min.css">
   <link rel="stylesheet" href="/public/css/style.css">
@@ -17,7 +15,7 @@
 
 <body>
   <div id="page_content">
-    {{content|safe}}
+    <%- content %>
   </div>
   <script>
     if (typeof htmx !== 'undefined') {

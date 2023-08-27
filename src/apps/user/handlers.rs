@@ -114,9 +114,7 @@ pub async fn post_sign_up(
 pub async fn get_log_in(Extension(context): Extension<Context>) -> Result<impl IntoResponse> {
     info!("Hit get_login.");
 
-    let rendered_login = LogInTemplate::new_render()?;
-
-    let rendered = utils::render_template(context.is_htmx, rendered_login)?;
+    let rendered = LogInTemplate::new_render(context.get_is_htmx())?;
 
     Ok((StatusCode::OK, Html(rendered)))
 }

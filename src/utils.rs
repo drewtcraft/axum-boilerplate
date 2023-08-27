@@ -1,11 +1,8 @@
-use askama::Template;
-use sailfish::TemplateOnce;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
-use log::{debug, info};
-use tower_cookies::Cookie;
+use log::info;
+use sailfish::TemplateOnce;
 
 use crate::{
-    apps::user::constants::SESSION_UID_COOKIE,
     constants::BASE_URL,
     error::{Error, Result},
     templates::BaseTemplate,

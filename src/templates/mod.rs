@@ -1,9 +1,18 @@
 use sailfish::TemplateOnce;
+use crate::error::{Result, Error};
 
 #[derive(TemplateOnce)]
 #[template(path = "base.stpl")]
 pub struct BaseTemplate {
     pub content: String,
+}
+
+impl BaseTemplate {
+    pub fn new_render(content: String) -> Result<String> {
+        Self { content }
+            .render_once()
+            .map_err(|e| Error::TemplateRenderingFailure)
+    }
 }
 
 #[derive(TemplateOnce)]

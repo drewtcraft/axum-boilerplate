@@ -34,4 +34,12 @@ impl Context {
     pub fn set_page_title(&mut self, page_title: &str) {
         self.page_title = Some(page_title.to_string());
     }
+
+    pub fn get_is_htmx(&self) -> bool {
+        if let Some(is_htmx) = self.is_htmx {
+            is_htmx
+        } else {
+            false
+        }
+    }
 }

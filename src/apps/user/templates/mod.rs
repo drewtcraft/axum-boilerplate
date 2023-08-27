@@ -3,6 +3,7 @@ use crate::apps::user::models::User;
 use crate::error::{Error, Result};
 use crate::traits::{ParamValidationError, ToPlainText};
 use sailfish::TemplateOnce;
+use crate::templates::BaseTemplate;
 
 // --------------
 // USER TEMPLATES
@@ -14,10 +15,16 @@ pub struct LogInTemplate {
 }
 
 impl LogInTemplate {
-    pub fn new_render() -> Result<String> {
-        Self { input_error: None }
+    pub fn new_render(is_htmx: bool) -> Result<String> {
+        let rendered = Self { input_error: None }
             .render_once()
-            .map_err(|_| Error::TemplateRenderingFailure)
+            .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 }
 
