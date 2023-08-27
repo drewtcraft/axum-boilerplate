@@ -29,7 +29,7 @@ use super::serializers::{
     IdParam, LogInBody, SendInviteBody, SignUpBody, UidParam, UserEditParams, UserListParams,
 };
 use super::templates::{
-    /*AdminUserEditTemplate,*/ AdminUserListTemplate, EmailInviteTemplate,
+    AdminUserEditTemplate, AdminUserListTemplate, EmailInviteTemplate,
     SignUpTemplate, UserListUser,
 };
 
@@ -283,6 +283,7 @@ pub async fn list_users(
     Ok((StatusCode::OK, Html(html)))
 }
 
+// TODO this shit hella broken not even retrieving the user, circle back here
 // pub async fn admin_get_edit_user(
 //     State(state): State<Arc<AppState>>,
 //     Extension(context): Extension<Context>,
@@ -294,12 +295,8 @@ pub async fn list_users(
 //     let submit_url = format!("/admin/users/{}", user.id);
 //     let user_roles = models::UserRole::list_user_roles(&state.db_pool).await?;
 //     let rendered_user_edit = AdminUserEditTemplate::new_render_existing(
+//         context.get_is_htmx(),
 //         user_roles,
-//         &user_id_str,
-//         user.username.as_ref().map(|s| s.as_str()),
-//         user.email.as_str(),
-//         user.active,
-//         user.user_role_id as usize,
 //         &submit_url.as_str(),
 //         None,
 //     )?;

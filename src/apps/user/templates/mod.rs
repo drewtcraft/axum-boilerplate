@@ -261,13 +261,14 @@ pub struct AdminUserEditTemplate {
 
 impl AdminUserEditTemplate {
     pub fn new_render_error(
+        is_htmx: bool,
         user_id: Option<String>,
         user_roles: Vec<(i32, String)>,
         query_params: UserEditParams,
         query_params_errors: UserEditParamsErrors,
         submit_url: String,
     ) -> Result<String> {
-        Self {
+        let rendered = Self {
             user_id,
             user_roles,
             query_params,
@@ -276,17 +277,24 @@ impl AdminUserEditTemplate {
             success_message: None,
         }
         .render_once()
-        .map_err(|_| Error::TemplateRenderingFailure)
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 
     pub fn new_render_existing(
+        is_htmx: bool,
         user_id: String,
         user_roles: Vec<(i32, String)>,
         query_params: UserEditParams,
         submit_url: String,
         success_message: Option<String>,
     ) -> Result<String> {
-        Self {
+        let rendered = Self {
             user_id: Some(user_id),
             user_roles,
             query_params,
@@ -295,6 +303,12 @@ impl AdminUserEditTemplate {
             success_message,
         }
         .render_once()
-        .map_err(|_| Error::TemplateRenderingFailure)
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 }
