@@ -1,9 +1,6 @@
 use serde::Deserialize;
 
-use crate::{
-    traits::{ParamValidationError, ParamValidator},
-    utils::{ALPHANUMERIC_UNDERSCORE_RX, SIMPLE_EMAIL_RX},
-};
+use crate::traits::{ParamValidationError, ParamValidator};
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct NewThread {
@@ -14,14 +11,14 @@ pub struct NewThread {
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct NewThreadErrors {
     pub title: Option<String>,
-    pub text_content: Option<String>,
+    pub content: Option<String>,
 }
 
 impl ParamValidationError for NewThreadErrors {
     fn new_empty() -> Self {
         Self {
             title: None,
-            text_content: None,
+            content: None,
         }
     }
 }
@@ -40,7 +37,7 @@ impl ParamValidator<NewThreadErrors> for NewThread {
 
         if self.content.trim().is_empty() {
             valid = false;
-            errors.text_content = Some("content cannot be blank".to_string())
+            errors.content = Some("content cannot be blank".to_string())
         }
 
         (valid, errors)

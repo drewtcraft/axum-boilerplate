@@ -8,21 +8,21 @@
       <label for="title">
         title
       </label>
-      <input type="text" name="title" id="title" value="{{ title.unwrap_or_default() }}" required />
+      <input type="text" name="title" id="title" value="<%= params.title %>" required />
 
-      {% if let Some(title_input_error) = title_input_error%}
-      <div class="error">{{ title_input_error}}</div>
-      {% endif %}
+      <% if let Some(title) = params_errors.title { %>
+      <div class="error"><%= title %></div>
+      <% }%>
     </fieldset>
 
     <fieldset>
       <label for="content">
         content
       </label>
-      <textarea type="text" name="content" id="content" value="{{ content.unwrap_or_default() }}" required ></textarea>
-      {% if let Some(content_input_error) = content_input_error %}
-      <div class="error">{{ content_input_error }}</div>
-      {% endif %}
+      <textarea type="text" name="content" id="content" value="<%= params.content %>" required ></textarea>
+      <% if let Some(content) = params_errors.content  { %>
+      <div class="error"><%= content %></div>
+      <% } %>
     </fieldset>
 
     <input type="submit" value="create new thread" />
