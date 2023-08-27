@@ -1,7 +1,6 @@
 use crate::error::{Error, Result};
 use crate::templates::BaseTemplate;
 use crate::traits::ToPlainText;
-use askama::Template;
 use sailfish::TemplateOnce;
 
 use super::serializers::{NewThread, NewThreadErrors};

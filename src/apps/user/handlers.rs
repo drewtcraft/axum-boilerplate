@@ -1,7 +1,6 @@
 use log::{debug, error, info, warn};
 use std::sync::Arc;
 
-use askama::Template;
 use axum::extract::{Extension, Path, Query, State};
 use axum::http::{Request, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
@@ -9,10 +8,6 @@ use axum::Form;
 use sailfish::TemplateOnce;
 use tower_cookies::cookie::time::Duration;
 use tower_cookies::{Cookie, Cookies};
-
-use serde::Deserialize;
-use std::str::FromStr;
-use strum_macros::{AsRefStr, EnumIter};
 
 use crate::apps::user::models;
 use crate::apps::user::templates::{
@@ -23,7 +18,7 @@ use crate::error::{Error, Result};
 use crate::mailer::send_email;
 use crate::state::AppState;
 use crate::traits::{ParamValidator, ToPlainText};
-use crate::utils::{self, get_own_url_with};
+use crate::utils::get_own_url_with;
 
 use super::constants::SESSION_UID_COOKIE;
 use super::models::{User, UserTempUid, UserTempUid::TempUidPurpose};
