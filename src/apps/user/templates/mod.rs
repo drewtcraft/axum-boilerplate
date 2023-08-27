@@ -185,6 +185,7 @@ pub struct AdminUserListTemplate {
 
 impl AdminUserListTemplate {
     pub fn new_render(
+        is_htmx: bool,
         users_list: Vec<User::User>,
         user_roles: Vec<(i32, String)>,
         query_params: UserListParams,
@@ -202,29 +203,42 @@ impl AdminUserListTemplate {
             })
             .collect();
 
-        Self {
+        let rendered = Self {
             users_list: formatted_users,
             user_roles,
             query_params,
             query_params_errors: UserListParamsErrors::new_empty(),
         }
         .render_once()
-        .map_err(|_| Error::TemplateRenderingFailure)
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+        
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 
     pub fn new_render_error(
+        is_htmx: bool,
         user_roles: Vec<(i32, String)>,
         query_params: UserListParams,
         query_params_errors: UserListParamsErrors,
     ) -> Result<String> {
-        Self {
+        let rendered = Self {
             users_list: vec![],
             user_roles,
             query_params,
             query_params_errors,
         }
         .render_once()
-        .map_err(|_| Error::TemplateRenderingFailure)
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 }
 

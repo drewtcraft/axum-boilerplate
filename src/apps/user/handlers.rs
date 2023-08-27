@@ -267,7 +267,7 @@ pub async fn list_users(
     if !valid {
         info!("admin list_users invalid params");
         let rendered_user_list =
-            AdminUserListTemplate::new_render_error(user_roles, query_params, errors)?;
+            AdminUserListTemplate::new_render_error(context.get_is_htmx(), user_roles, query_params, errors)?;
 
         let html = utils::render_template(context.is_htmx, rendered_user_list)?;
         return Ok((StatusCode::OK, Html(html)));
@@ -277,7 +277,7 @@ pub async fn list_users(
     info!("admin list_users found some users");
 
     let rendered_user_list =
-        AdminUserListTemplate::new_render(users, user_roles, query_params)?;
+        AdminUserListTemplate::new_render(context.get_is_htmx(), users, user_roles, query_params)?;
 
     let html = utils::render_template(context.is_htmx, rendered_user_list)?;
 
