@@ -59,8 +59,8 @@ pub struct ThreadPost<'a> {
     updated_at: &'a str,
 }
 
-#[derive(Template)]
-#[template(path = "get-thread.html")]
+#[derive(TemplateOnce)]
+#[template(path = "get-thread.stpl")]
 pub struct ThreadTemplate<'a> {
     title: &'a str,
     username: &'a str,

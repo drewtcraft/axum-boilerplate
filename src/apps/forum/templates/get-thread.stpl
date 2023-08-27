@@ -1,0 +1,30 @@
+<div class="thread">
+  <h1><%= title %></h1>
+  <div>
+    <div><a href="/users/<%= username %>"><%= username %></a></div>
+    <div>created <%= created_at %></div>
+    <div>updated <%= updated_at %></div>
+  </div>
+
+  <div class="posts">
+    <% for post in posts { %>
+      <div class="post">
+        <div><a href="/users/<%= username %>"><%= username %></a></div>
+        <div>created <%= created_at %></div>
+        <div>updated <%= updated_at %></div>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="page-controls">
+    <% for page_num in 1..total_pages + 1 { %>
+      <span>
+        <% if page == page_num { %>
+          <strong><%= page_num %></strong>
+        <% } else { %>
+          <a href="?page=<%= page_num %>&limit=<%= limit %>&sort_dir=<%= sort_dir %>"><%= page_num %></a>
+        <% } %>
+      </span>
+    <% } %>
+  </div>
+</div>
