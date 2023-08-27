@@ -1,45 +1,54 @@
 use crate::error::{Error, Result};
+use crate::templates::BaseTemplate;
 use crate::traits::ToPlainText;
 use askama::Template;
+use sailfish::TemplateOnce;
+
+use super::serializers::{NewThread, NewThreadErrors};
 
 // ----------------
 // THREAD TEMPLATES
 // ----------------
-#[derive(Template)]
-#[template(path = "new-thread.html")]
-pub struct NewThreadTemplate<'a> {
-    pub title: Option<&'a str>,
-    pub title_input_error: Option<&'a str>,
-    pub content: Option<&'a str>,
-    pub content_input_error: Option<&'a str>,
+#[derive(TemplateOnce)]
+#[template(path = "new-thread.stpl")]
+pub struct NewThreadTemplate {
+    pub params: NewThread,
+    pub params_errors: NewThreadErrors,
 }
 
-impl<'a> NewThreadTemplate<'a> {
-    pub fn new_render() -> Result<String> {
-        Self {
-            title: None,
-            title_input_error: None,
-            content: None,
-            content_input_error: None,
+impl NewThreadTemplate {
+    pub fn new_render(is_htmx: bool) -> Result<String> {
+        let rendered = Self {
+            params: NewThread::default(),
+            params_errors: NewThreadErrors::default(),
         }
-        .render()
-        .map_err(|_| Error::TemplateRenderingFailure)
+        .render_once()
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 
     pub fn new_render_error(
-        title: Option<&'a str>,
-        title_input_error: Option<&'a str>,
-        content: Option<&'a str>,
-        content_input_error: Option<&'a str>,
+        is_htmx: bool,
+        params: NewThread,
+        params_errors: NewThreadErrors,
     ) -> Result<String> {
-        Self {
-            title,
-            title_input_error,
-            content,
-            content_input_error,
+        let rendered = Self {
+            params,
+            params_errors,
         }
-        .render()
-        .map_err(|_| Error::TemplateRenderingFailure)
+        .render_once()
+        .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 }
 

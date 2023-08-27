@@ -5,13 +5,13 @@ use crate::{
     utils::{ALPHANUMERIC_UNDERSCORE_RX, SIMPLE_EMAIL_RX},
 };
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Default)]
 pub struct NewThread {
     pub title: String,
     pub content: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Default)]
 pub struct NewThreadErrors {
     pub title: Option<String>,
     pub text_content: Option<String>,

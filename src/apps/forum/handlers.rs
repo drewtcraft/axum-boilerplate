@@ -17,15 +17,11 @@ use super::{
 
 pub async fn get_create_thread(
     Extension(mut context): Extension<Context>,
-    State(state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse> {
-    let rendered_new_thread = NewThreadTemplate::new_render()?;
-
+    let rendered = NewThreadTemplate::new_render(context.get_is_htmx())?;
     context.page_title = Some(String::from("Threads"));
 
-    let html = utils::render_template(context.is_htmx, rendered_new_thread)?;
-
-    Ok(Html(html))
+    Ok(Html(rendered))
 }
 
 pub async fn post_create_thread(
@@ -36,19 +32,17 @@ pub async fn post_create_thread(
     let (valid, errors) = body.validate();
     if !valid {
         info!("new thread is invalid: {:?}", errors);
-        let rendered_new_thread = NewThreadTemplate::new_render_error(
-            Some(body.title.as_str()),
-            errors.title.as_ref().map(|s| s.as_str()),
-            Some(body.content.as_str()),
-            errors.text_content.as_ref().map(|s| s.as_str()),
+        let rendered = NewThreadTemplate::new_render_error(
+            context.get_is_htmx(),
+            body,
+            errors,
         )?;
 
-        let html = utils::render_template(context.is_htmx, rendered_new_thread)?;
-
-        return Ok(Html(html).into_response());
+        return Ok(Html(rendered).into_response());
     }
     let user_id = context.user_data.unwrap().user_id;
 
+    // TODO what if this took the same serializer as the template??
     let thread_id = PostModel::create_post(
         &state.db_pool,
         user_id,

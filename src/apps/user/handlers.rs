@@ -1,12 +1,12 @@
 use log::{debug, error, info, warn};
 use std::sync::Arc;
 
-use sailfish::TemplateOnce;
 use askama::Template;
 use axum::extract::{Extension, Path, Query, State};
 use axum::http::{Request, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::Form;
+use sailfish::TemplateOnce;
 use tower_cookies::cookie::time::Duration;
 use tower_cookies::{Cookie, Cookies};
 
@@ -15,7 +15,9 @@ use std::str::FromStr;
 use strum_macros::{AsRefStr, EnumIter};
 
 use crate::apps::user::models;
-use crate::apps::user::templates::{EmailLogInTemplate, LogOutTemplate, SendInviteTemplate, LogInTemplate};
+use crate::apps::user::templates::{
+    EmailLogInTemplate, LogInTemplate, LogOutTemplate, SendInviteTemplate,
+};
 use crate::context::Context;
 use crate::error::{Error, Result};
 use crate::mailer::send_email;
@@ -29,8 +31,7 @@ use super::serializers::{
     IdParam, LogInBody, SendInviteBody, SignUpBody, UidParam, UserEditParams, UserListParams,
 };
 use super::templates::{
-    AdminUserEditTemplate, AdminUserListTemplate, EmailInviteTemplate,
-    SignUpTemplate, UserListUser,
+    AdminUserEditTemplate, AdminUserListTemplate, EmailInviteTemplate, SignUpTemplate, UserListUser,
 };
 
 pub async fn get_sign_up(
@@ -213,13 +214,7 @@ pub async fn post_send_invite(
         .render_once()
         .map_err(|_| Error::TemplateRenderingFailure)?;
 
-    send_email(
-        &email,
-        "You've been invited to join XXX",
-        html,
-        plain_text,
-    )
-    .await?;
+    send_email(&email, "You've been invited to join XXX", html, plain_text).await?;
 
     Ok((StatusCode::OK, Html("")))
 }
@@ -265,22 +260,23 @@ pub async fn list_users(
     let user_roles = models::UserRole::list_user_roles(&state.db_pool).await?;
     if !valid {
         info!("admin list_users invalid params");
-        let rendered_user_list =
-            AdminUserListTemplate::new_render_error(context.get_is_htmx(), user_roles, query_params, errors)?;
+        let rendered = AdminUserListTemplate::new_render_error(
+            context.get_is_htmx(),
+            user_roles,
+            query_params,
+            errors,
+        )?;
 
-        let html = utils::render_template(context.is_htmx, rendered_user_list)?;
-        return Ok((StatusCode::OK, Html(html)));
+        return Ok((StatusCode::OK, Html(rendered)));
     }
 
     let users = User::list_users(&state.db_pool, &query_params).await?;
     info!("admin list_users found some users");
 
-    let rendered_user_list =
+    let rendered =
         AdminUserListTemplate::new_render(context.get_is_htmx(), users, user_roles, query_params)?;
 
-    let html = utils::render_template(context.is_htmx, rendered_user_list)?;
-
-    Ok((StatusCode::OK, Html(html)))
+    Ok((StatusCode::OK, Html(rendered)))
 }
 
 // TODO this shit hella broken not even retrieving the user, circle back here
