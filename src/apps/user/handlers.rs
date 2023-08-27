@@ -183,9 +183,7 @@ pub async fn get_send_invite(Extension(context): Extension<Context>) -> Result<i
 
     // TODO delete expired invites
 
-    let rendered_invite = SendInviteTemplate::new_render()?;
-
-    let rendered = utils::render_template(context.is_htmx, rendered_invite)?;
+    let rendered = SendInviteTemplate::new_render(context.get_is_htmx())?;
 
     Ok((StatusCode::OK, Html(rendered)))
 }

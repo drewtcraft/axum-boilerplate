@@ -82,16 +82,29 @@ pub struct SendInviteTemplate {
 }
 
 impl SendInviteTemplate {
-    pub fn new_render() -> Result<String> {
-        Self { input_error: None }
+    pub fn new_render(is_htmx: bool) -> Result<String> {
+        let rendered = Self { input_error: None }
             .render_once()
-            .map_err(|_| Error::TemplateRenderingFailure)
+            .map_err(|_| Error::TemplateRenderingFailure)?;
+        
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 
-    pub fn new_render_error(input_error: Option<String>) -> Result<String> {
-        Self { input_error }
+    pub fn new_render_error(is_htmx: bool, input_error: Option<String>) -> Result<String> {
+        let rendered = Self { input_error }
             .render_once()
-            .map_err(|_| Error::TemplateRenderingFailure)
+            .map_err(|_| Error::TemplateRenderingFailure)?;
+
+        
+        if is_htmx {
+            Ok(rendered)
+        } else {
+            BaseTemplate::new_render(rendered)
+        }
     }
 }
 
