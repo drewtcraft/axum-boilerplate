@@ -45,7 +45,7 @@ pub async fn result_mapper(res: Response) -> Response {
         .map(|server_error| {
             let (status_code, client_error) = server_error.status_and_client_error();
             let status_code_str = status_code.to_string();
-            let rendered_error = ErrorTemplate::new(client_error.as_ref(), &status_code_str);
+            let rendered_error = ErrorTemplate::new(client_error.as_ref().to_string(), status_code_str);
             let html = if let Some(context) = context {
                 utils::render_template(context.is_htmx, rendered_error.clone())
                     .unwrap_or(rendered_error)

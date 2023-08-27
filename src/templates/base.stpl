@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="A website for visual artists to collaborate by playing games similar to \" Exquisite
+    Corpse\"">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:title" content="{% block og_title %}{% endblock og_title %}" />
+  <meta property="og:image" content="{% block og_image %}{% endblock og_image %}" />
+  <title>{% block title %}XQZT CRPS{% endblock title %}</title>
+  <link rel="stylesheet" href="/public/css/unpoly.min.css">
+  <link rel="stylesheet" href="/public/css/style.css">
+
+  <script src="/public/js/htmx.min.js"></script>
+</head>
+
+<body>
+  <div id="page_content">
+    {{content|safe}}
+  </div>
+  <script>
+    if (typeof htmx !== 'undefined') {
+      console.log('htmx is loaded!');
+      htmx.on("htmx:afterSwap", function (event) {
+        let title = event.detail.xhr.getResponseHeader("HX-Title");
+        if (title) {
+          document.title = title;
+        }
+      });
+      // You can perform additional actions here
+    } else {
+      console.log('htmx is not loaded!');
+    }
+  </script>
+
+  <script>
+    function initializeWithQuill(cb) {
+      // executes cb after loading quill, if not loaded already
+      if (typeof Quill === 'undefined') {
+        var script = document.createElement('script');
+        script.src = '/public/js/quill.js';
+        script.onload = cb;
+        document.head.appendChild(script);
+      } else {
+        cb();
+      }
+    }
+
+    const QUILL_CONFIGURATION = {};
+
+    function initlializeQuill(editorSelector, editorData, formSelector) {
+      // hydrates quill editor with data/configuration
+      // also attaches quill data to nearest enclosing form as "richText"
+      initializeWithQuill(function () {
+        let editor = new Quill(editorSelector, QUILL_CONFIGURATION);
+        if (editorData) {
+          editor.setContent(editorData);
+        }
+        let form = document.querySelector(formSelector);
+        form.addEventListener('htmx:beforeRequest', function(event) {
+          let formData = event.detail.elt;
+          formData.append('richText', editor.getContent());
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>

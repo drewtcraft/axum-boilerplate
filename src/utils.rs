@@ -1,4 +1,5 @@
 use askama::Template;
+use sailfish::TemplateOnce;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use log::{debug, info};
 use tower_cookies::Cookie;
@@ -69,7 +70,7 @@ pub fn render_template(is_htmx: Option<bool>, partial: String) -> Result<String>
 pub fn render_base_with_partial(partial: String) -> Result<String> {
     info!("rendering non-htmx FULL PAGE request");
     BaseTemplate { content: partial }
-        .render()
+        .render_once()
         .map_err(|_| Error::TemplateRenderingFailure)
 }
 

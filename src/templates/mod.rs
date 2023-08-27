@@ -1,23 +1,22 @@
-use crate::error::{Error, Result};
-use askama::Template;
+use sailfish::TemplateOnce;
 
-#[derive(Template)]
-#[template(path = "base.html")]
+#[derive(TemplateOnce)]
+#[template(path = "base.stpl")]
 pub struct BaseTemplate {
     pub content: String,
 }
 
-#[derive(Template)]
-#[template(path = "error.html")]
-pub struct ErrorTemplate<'a> {
-    pub error_message: &'a str,
-    pub status_code: &'a str,
+#[derive(TemplateOnce)]
+#[template(path = "error.stpl")]
+pub struct ErrorTemplate {
+    pub error_message: String,
+    pub status_code: String,
 }
 
-impl<'a> ErrorTemplate<'a> {
-    pub fn new(error_message: &'a str, status_code: &'a str) -> String {
+impl ErrorTemplate {
+    pub fn new(error_message: String, status_code: String) -> String {
         Self { error_message, status_code }
-            .render()
+            .render_once()
             .unwrap_or("Error template failure.".to_string())
     }
 }

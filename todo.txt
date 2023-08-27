@@ -1,5 +1,9 @@
 TODO ("-" to do; "x" done)
 --------------------------
+- switch out everything to sailfish so query/post params can be more easily reused
+	- swap out base, figure out an include strategy
+		- probably all templates take an is_htmx parameter? can use that instead of calling the utils::render fn all the time, not sure which is the lesser evil though
+	- swap out forum templates
 - think through the data storage for rich text
 	- it is JSON so ideally object storage
 	- BUT it would be nice to attach it to each post in the query
